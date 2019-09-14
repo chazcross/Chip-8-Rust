@@ -8,7 +8,6 @@ edition = "2018"
 
 [dependencies]
 rand = "0.7.0"
-clap = "2.33.0"
 crossterm = "0.10.2"
 
 [dependencies.tui]

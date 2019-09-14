@@ -6,7 +6,6 @@ use tui::backend::Backend;
 use tui::backend::CrosstermBackend;
 use tui::layout::{Constraint, Direction, Layout, Rect};
 use tui::style::{Color, Style};
-use tui::widgets::canvas::{Canvas, Line, Points, Rectangle};
 use tui::widgets::{Block, Borders, List, Paragraph, Text, Widget};
 use tui::{Frame, Terminal};
 
@@ -196,8 +195,8 @@ impl TerminalApp {
     pub fn display_grfx<B: Backend>(&mut self, f: &mut Frame<B>, chunk: Rect) {
         let style = Style::default().fg(Color::White);
 
-        let hasPx = Style::default().fg(Color::White);
-        let noPx = Style::default().fg(Color::Black);
+        let has_px = Style::default().fg(Color::White);
+        let no_pxx = Style::default().fg(Color::Black);
 
         let block = Block::default()
             .borders(Borders::ALL)
@@ -208,9 +207,9 @@ impl TerminalApp {
         for y in 0..32 {
             for x in 0..64 {
                 let color = if self.cpu.gfx[x][y] == true {
-                    hasPx
+                    has_px
                 } else {
-                    noPx
+                    no_pxx
                 };
 
                 text.push(Text::styled(format!("{}", "\u{2588}"), color));
