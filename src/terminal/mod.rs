@@ -6,6 +6,7 @@ use tui::backend::Backend;
 use tui::backend::CrosstermBackend;
 use tui::layout::{Constraint, Direction, Layout, Rect};
 use tui::style::{Color, Style};
+use tui::widgets::canvas::{Canvas, Line, Points, Rectangle};
 use tui::widgets::{Block, Borders, List, Paragraph, Text, Widget};
 use tui::{Frame, Terminal};
 
@@ -55,12 +56,18 @@ impl TerminalApp {
                             .direction(Direction::Horizontal)
                             .margin(1)
                             .constraints(
-                                [Constraint::Percentage(50), Constraint::Percentage(50)].as_ref(),
+                                [
+                                    Constraint::Percentage(20),
+                                    Constraint::Percentage(20),
+                                    Constraint::Percentage(80),
+                                ]
+                                .as_ref(),
                             )
                             .split(f.size());
 
                         self.display_disassemble_program(&mut f, chunks[0]);
                         self.display_executing_instruction(&mut f, chunks[1]);
+                        self.display_grfx(&mut f, chunks[2])
                     })
                     .unwrap();
             }
@@ -173,6 +180,38 @@ impl TerminalApp {
             ),
             Text::styled(format!("Key: {:#x} \n", self.cpu.key_press), style),
         ];
+
+        Paragraph::new(text.iter())
+            .block(block.clone().title("Left, no wrap"))
+            .render(f, chunk);
+    }
+
+    pub fn display_grfx<B: Backend>(&mut self, f: &mut Frame<B>, chunk: Rect) {
+        let style = Style::default().fg(Color::White);
+
+        let hasPx = Style::default().fg(Color::White);
+        let noPx = Style::default().fg(Color::Black);
+
+        let block = Block::default()
+            .borders(Borders::ALL)
+            .title_style(Style::default());
+
+        let mut text = vec![Text::styled("", style)];
+
+        for y in 0..32 {
+            for x in 0..64 {
+                // pixel.x = x as u16;
+                //pixel.y = y as u16;
+                let color = if self.cpu.gfx[x][y] == true {
+                    hasPx
+                } else {
+                    noPx
+                };
+
+                text.push(Text::styled(format!("{}", "\u{2588}"), color));
+            }
+            text.push(Text::styled(format!("{}", "\n"), style));
+        }
 
         Paragraph::new(text.iter())
             .block(block.clone().title("Left, no wrap"))

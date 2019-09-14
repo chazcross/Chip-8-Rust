@@ -12,7 +12,7 @@ pub struct CPU {
     pub registers: [u8; 16],
     pub i_register: u16,
     pub program_counter: u16,
-    pub gfx: [bool; 64 * 32],
+    pub gfx: [[bool; 32]; 64], //   [bool; 64 * 32],
     pub delay_timer: u8,
     pub sound_timer: u8,
     pub stack: Vec<u16>,
@@ -30,7 +30,7 @@ impl CPU {
             registers: [0; 16],
             i_register: 0,
             program_counter: 0x200,
-            gfx: [false; 64 * 32],
+            gfx: [[false; 32]; 64], // [false; 64 * 32],
             delay_timer: 0,
             sound_timer: 0,
             stack: vec![],
@@ -58,13 +58,11 @@ impl CPU {
     }
 
     pub fn do_cycle(&mut self) {
-        if self.sound_timer > 0
-        {
+        if self.sound_timer > 0 {
             self.sound_timer -= 1;
         }
 
-        if self.delay_timer > 0
-        {
+        if self.delay_timer > 0 {
             self.delay_timer -= 1;
         }
 
@@ -88,10 +86,10 @@ impl CPU {
     pub fn execute_opcode(&mut self) {
         let nibble = self.opcode & 0xF000;
 
-        let x: u8 = ((self.opcode & 0x0f00) >> 8) as u8;
+        let x: u8 = ((self.opcode & 0x0F00) >> 8) as u8;
         let y: u8 = ((self.opcode & 0x00F0) >> 4) as u8;
-        let nn: u8 = (self.opcode & 0x00ff) as u8;
-        let nnn: u16 = self.opcode & 0x0fff;
+        let nn: u8 = (self.opcode & 0x00FF) as u8;
+        let nnn: u16 = self.opcode & 0x0FFF;
         let n: u8 = (self.opcode & 0x000F) as u8;
 
         match nibble {
@@ -118,7 +116,7 @@ impl CPU {
             0xA000 => self.op_annn(nnn),
             0xB000 => self.op_ni(),
             0xC000 => self.op_cxnn(x, nn),
-            0xD000 => self.op_dxyn(x, y, n),
+            0xD000 => self.op_dxyn(x as usize, y as usize, n as usize),
             0xE000 => match self.opcode & 0xF0FF {
                 0xE0A1 => self.op_exa1(x),
                 _ => self.op_ni(),
@@ -225,7 +223,21 @@ impl CPU {
         self.registers[x as usize] = nn & random;
     }
 
-    fn op_dxyn(&mut self, d: u8, x: u8, n: u8) {}
+    fn op_dxyn(&mut self, x: usize, y: usize, n: usize) {
+        for h in 0..n {
+            let font = self.memory[self.i_register as usize + h];
+            let y_pos = y + h;
+
+            self.gfx[x][y_pos] = font & 0x80 != 0;
+            self.gfx[x + 1][y_pos] = font & 0x40 != 0;
+            self.gfx[x + 2][y_pos] = font & 0x20 != 0;
+            self.gfx[x + 3][y_pos] = font & 0x10 != 0;
+            self.gfx[x + 4][y_pos] = font & 0x8 != 0;
+            self.gfx[x + 5][y_pos] = font & 0x4 != 0;
+            self.gfx[x + 6][y_pos] = font & 0x2 != 0;
+            self.gfx[x + 7][y_pos] = font & 0x1 != 0;
+        }
+    }
 
     fn op_exa1(&mut self, x: u8) {
         let vx = self.registers[x as usize];
@@ -281,7 +293,7 @@ impl CPU {
 }
 
 pub static FONT_SET: [u8; 80] = [
-    0xF0, 0x90, 0x90, 0x90, 0xF0, // 0
+    0xF0, 0x90, 0x90, 0x90, 0xF0, // 0      11110000, 10010000, 10010000, 10010000, 11110000
     0x20, 0x60, 0x20, 0x20, 0x70, // 1
     0xF0, 0x10, 0xF0, 0x80, 0xF0, // 2
     0xF0, 0x10, 0xF0, 0x10, 0xF0, // 3
