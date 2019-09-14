@@ -136,10 +136,10 @@ impl CPU {
     }
 
     fn op_ni(&mut self) {
-        // println!(
-        //     "{:#x} {:#X} not implemented yet",
-        //     self.program_counter, self.opcode
-        // );
+        panic!(
+            "{:#x} {:#X} not implemented yet",
+            self.program_counter, self.opcode
+        );
     }
 
     fn op_00ee(&mut self) {
@@ -224,18 +224,20 @@ impl CPU {
     }
 
     fn op_dxyn(&mut self, x: usize, y: usize, n: usize) {
-        for h in 0..n {
-            let font = self.memory[self.i_register as usize + h];
-            let y_pos = y + h;
+        let vx = self.registers[x];
+        let vy = self.registers[y];
+        self.registers[0xF] = 0;
 
-            self.gfx[x][y_pos] = font & 0x80 != 0;
-            self.gfx[x + 1][y_pos] = font & 0x40 != 0;
-            self.gfx[x + 2][y_pos] = font & 0x20 != 0;
-            self.gfx[x + 3][y_pos] = font & 0x10 != 0;
-            self.gfx[x + 4][y_pos] = font & 0x8 != 0;
-            self.gfx[x + 5][y_pos] = font & 0x4 != 0;
-            self.gfx[x + 6][y_pos] = font & 0x2 != 0;
-            self.gfx[x + 7][y_pos] = font & 0x1 != 0;
+        for byte in 0..n {
+            let font = self.memory[self.i_register as usize + byte];
+            let y_pos = ((vy + byte as u8) % 32) as usize;
+
+            for bit in 0..8 {
+                let x_pos = ((vx + bit) % 64) as usize;
+                let pixel = (font >> (7 - bit)) & 1 != 0;
+                self.registers[0xF] |= (pixel & self.gfx[x_pos][y_pos]) as u8;
+                self.gfx[x_pos][y_pos] ^= pixel;
+            }
         }
     }
 

@@ -333,3 +333,28 @@ fn op_fx65() {
     assert_eq!(cpu.registers[8], 9);
     assert_eq!(cpu.registers[9], 10);
 }
+
+#[test]
+fn op_dxyn()
+{
+    let mut cpu = CPU::new();
+    cpu.opcode = 0xDAB6;
+
+    cpu.registers[10] = 0x2;
+    cpu.registers[11] = 0xc;
+    cpu.registers[12] = 0x3f;
+    cpu.registers[13] = 0xc;
+    cpu.i_register = 0x2EA;
+
+    cpu.memory[0x2EA] = 0x80;
+    cpu.memory[0x2EB] = 0x80;
+    cpu.memory[0x2EC] = 0x80;
+    cpu.memory[0x2ED] = 0x80;
+    cpu.memory[0x2EE] = 0x80;
+    cpu.memory[0x2EF] = 0x80;
+
+    cpu.execute_opcode();
+
+    assert_eq!(cpu.gfx[2][12], true)
+
+}

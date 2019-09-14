@@ -88,7 +88,11 @@ impl TerminalApp {
         });
 
         List::new(items)
-            .block(Block::default().borders(Borders::ALL).title("List"))
+            .block(
+                Block::default()
+                    .borders(Borders::ALL)
+                    .title("pgup/pgdown to scroll"),
+            )
             .render(f, chunk);
     }
 
@@ -105,7 +109,10 @@ impl TerminalApp {
                 format!("Program Counter: {:#x} \n", self.cpu.program_counter),
                 style,
             ),
-            Text::styled(format!("Register [I]: {} \n", self.cpu.i_register), style),
+            Text::styled(
+                format!("Register [I]: {:#x} \n", self.cpu.i_register),
+                style,
+            ),
             Text::styled(
                 format!("Register {}: {:#x} \n", 0, self.cpu.registers[0]),
                 style,
@@ -182,7 +189,7 @@ impl TerminalApp {
         ];
 
         Paragraph::new(text.iter())
-            .block(block.clone().title("Left, no wrap"))
+            .block(block.clone().title("CPU info"))
             .render(f, chunk);
     }
 
@@ -200,8 +207,6 @@ impl TerminalApp {
 
         for y in 0..32 {
             for x in 0..64 {
-                // pixel.x = x as u16;
-                //pixel.y = y as u16;
                 let color = if self.cpu.gfx[x][y] == true {
                     hasPx
                 } else {
@@ -214,7 +219,7 @@ impl TerminalApp {
         }
 
         Paragraph::new(text.iter())
-            .block(block.clone().title("Left, no wrap"))
+            .block(block.clone().title("UI"))
             .render(f, chunk);
     }
 
@@ -222,21 +227,55 @@ impl TerminalApp {
         match key_event {
             InputEvent::Keyboard(k) => match k {
                 KeyEvent::Char(c) => match c {
+                    '0' => {
+                        self.cpu.key_press = 0x0;
+                    }
+                    '1' => {
+                        self.cpu.key_press = 0x1;
+                    }
+                    '2' => {
+                        self.cpu.key_press = 0x2;
+                    }
+                    '3' => {
+                        self.cpu.key_press = 0x3;
+                    }
+                    '4' => {
+                        self.cpu.key_press = 0x4;
+                    }
+                    '5' => {
+                        self.cpu.key_press = 0x5;
+                    }
+                    '6' => {
+                        self.cpu.key_press = 0x6;
+                    }
+                    '7' => {
+                        self.cpu.key_press = 0x7;
+                    }
+                    '8' => {
+                        self.cpu.key_press = 0x8;
+                    }
+                    '9' => {
+                        self.cpu.key_press = 0x9;
+                    }
+
                     'q' => {
                         println!("The 'q' key is hit and the program is not listening to input anymore.\n\n");
                         return true;
                     }
                     _ => {}
                 },
-                KeyEvent::Up => {
+                KeyEvent::PageUp => {
                     if self.offset != 0 {
-                        self.offset -= 1;
+                        self.offset -= 10;
+                    }
+                }
+                KeyEvent::PageDown => {
+                    if self.offset + 1 < self.cpu.program_size {
+                        self.offset += 10;
                     }
                 }
                 KeyEvent::Down => {
-                    if self.offset + 1 < self.cpu.program_size {
-                        self.offset += 1;
-                    }
+                    //self.cpu.do_cycle();
                 }
                 _ => {}
             },
