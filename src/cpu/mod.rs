@@ -110,6 +110,7 @@ impl CPU {
                 0x8002 => self.op_8xy2(x, y),
                 0x8004 => self.op_8xy4(x, y),
                 0x8005 => self.op_8xy5(x, y),
+                0x8007 => self.op_8xy7(x, y),
                 _ => self.op_ni(),
             },
             0x9000 => self.op_ni(),
@@ -211,7 +212,17 @@ impl CPU {
         let (val, borrow) = vx.overflowing_sub(vy);
 
         self.registers[x as usize] = val;
-        self.registers[0xF as usize] = !borrow as u8;
+        self.registers[0xF as usize] = borrow as u8;
+    }
+
+    fn op_8xy7(&mut self, x: u8, y: u8) {
+        let vx = self.registers[x as usize];
+        let vy = self.registers[y as usize];
+
+        let (val, borrow) = vy.overflowing_sub(vx);
+
+        self.registers[x as usize] = val;
+        self.registers[0xF as usize] = borrow as u8;
     }
 
     fn op_annn(&mut self, nnn: u16) {
@@ -223,18 +234,19 @@ impl CPU {
         self.registers[x as usize] = nn & random;
     }
 
-    fn op_dxyn(&mut self, x: usize, y: usize, n: usize) {
+    fn op_dxyn(&mut self, x: usize, y: usize, rows: usize) {
         let vx = self.registers[x];
         let vy = self.registers[y];
         self.registers[0xF] = 0;
 
-        for byte in 0..n {
-            let font = self.memory[self.i_register as usize + byte];
-            let y_pos = ((vy + byte as u8) % 32) as usize;
+        for row in 0..rows {
+            let font = self.memory[self.i_register as usize + row];
+            let y_pos = ((vy + row as u8) % 32) as usize;
 
-            for bit in 0..8 {
-                let x_pos = ((vx + bit) % 64) as usize;
-                let pixel = (font >> (7 - bit)) & 1 != 0;
+            for column in 0..8 {
+                //sprites are 8px wide
+                let x_pos = ((vx + column) % 64) as usize;
+                let pixel = (font >> (7 - column)) & 1 != 0;
                 self.registers[0xF] |= (pixel & self.gfx[x_pos][y_pos]) as u8;
                 self.gfx[x_pos][y_pos] ^= pixel;
             }

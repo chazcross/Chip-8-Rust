@@ -171,24 +171,52 @@ fn op_8xy4_carry() {
 #[test]
 fn op_8xy5_noborrow() {
     let mut cpu = CPU::new();
-    cpu.opcode = 0x8435;
-    cpu.registers[3] = 0xFF;
-    cpu.registers[4] = 0x2;
+    cpu.opcode = 0x8985;
+    cpu.registers[9] = 0x2;
+    cpu.registers[8] = 0x1;
 
     cpu.execute_opcode();
 
+    assert_eq!(cpu.registers[0x9], 1);
     assert_eq!(cpu.registers[0xf], 0);
 }
 
 #[test]
 fn op_8xy5_borrow() {
     let mut cpu = CPU::new();
-    cpu.opcode = 0x8435;
-    cpu.registers[3] = 0x2;
-    cpu.registers[4] = 0xFF;
+    cpu.opcode = 0x8985;
+    cpu.registers[9] = 0x2;
+    cpu.registers[8] = 0xFF;
 
     cpu.execute_opcode();
 
+    assert_eq!(cpu.registers[0x9], 0x3);
+    assert_eq!(cpu.registers[0xf], 1);
+}
+
+#[test]
+fn op_8xy7_noborrow() {
+    let mut cpu = CPU::new();
+    cpu.opcode = 0x8987;
+    cpu.registers[9] = 0x1;
+    cpu.registers[8] = 0x2;
+
+    cpu.execute_opcode();
+
+    assert_eq!(cpu.registers[9], 0x1);
+    assert_eq!(cpu.registers[0xf], 0);
+}
+
+#[test]
+fn op_8xy7_borrow() {
+    let mut cpu = CPU::new();
+    cpu.opcode = 0x8987;
+    cpu.registers[9] = 0x2;
+    cpu.registers[8] = 0x1;
+
+    cpu.execute_opcode();
+
+    assert_eq!(cpu.registers[9], 0xFF);
     assert_eq!(cpu.registers[0xf], 1);
 }
 
@@ -335,8 +363,7 @@ fn op_fx65() {
 }
 
 #[test]
-fn op_dxyn()
-{
+fn op_dxyn() {
     let mut cpu = CPU::new();
     cpu.opcode = 0xDAB6;
 
@@ -356,5 +383,4 @@ fn op_dxyn()
     cpu.execute_opcode();
 
     assert_eq!(cpu.gfx[2][12], true)
-
 }
