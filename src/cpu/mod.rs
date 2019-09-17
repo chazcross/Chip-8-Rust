@@ -94,7 +94,7 @@ impl CPU {
 
         match nibble {
             0x0000 => match self.opcode & 0x0FFF {
-                0x0E0 => self.op_ni(),
+                0x0E0 => self.op_00e0(),
                 0x00EE => self.op_00ee(),
                 _ => self.op_ni(),
             },
@@ -102,15 +102,19 @@ impl CPU {
             0x2000 => self.op_2nnn(nnn),
             0x3000 => self.op_3xnn(x, nn),
             0x4000 => self.op_4xnn(x, nn),
-            0x5000 => self.op_ni(),
+            0x5000 => self.op_5xy0(x, y),
             0x6000 => self.op_6xnn(x, nn),
             0x7000 => self.op_7xnn(x, nn),
             0x8000 => match self.opcode & 0xF00F {
                 0x8000 => self.op_8xy0(x, y),
+                0x8001 => self.op_8xy1(x, y),
                 0x8002 => self.op_8xy2(x, y),
+                0x8003 => self.op_8xy3(x, y),
                 0x8004 => self.op_8xy4(x, y),
                 0x8005 => self.op_8xy5(x, y),
+                0x8006 => self.op_8xy6(x, y),
                 0x8007 => self.op_8xy7(x, y),
+                0x800E => self.op_8xye(x, y),
                 _ => self.op_ni(),
             },
             0x9000 => self.op_ni(),
@@ -143,6 +147,14 @@ impl CPU {
         );
     }
 
+    fn op_00e0(&mut self) {
+        for y in 0..32 {
+            for x in 0..64 {
+                self.gfx[x][y] = false;
+            }
+        }
+    }
+
     fn op_00ee(&mut self) {
         let pc = self.stack.pop().unwrap();
         self.program_counter = pc;
@@ -173,6 +185,15 @@ impl CPU {
         }
     }
 
+    fn op_5xy0(&mut self, x: u8, y: u8) {
+        let vx = self.registers[x as usize];
+        let vy = self.registers[y as usize];
+
+        if vx == vy {
+            self.program_counter += 2;
+        }
+    }
+
     fn op_6xnn(&mut self, x: u8, nn: u8) {
         self.registers[x as usize] = nn;
     }
@@ -188,11 +209,25 @@ impl CPU {
         self.registers[x as usize] = vy;
     }
 
+    fn op_8xy1(&mut self, x: u8, y: u8) {
+        let vx = self.registers[x as usize];
+        let vy = self.registers[y as usize];
+
+        self.registers[x as usize] = vx | vy;
+    }
+
     fn op_8xy2(&mut self, x: u8, y: u8) {
         let vx = self.registers[x as usize];
         let vy = self.registers[y as usize];
 
         self.registers[x as usize] = vx & vy;
+    }
+
+    fn op_8xy3(&mut self, x: u8, y: u8) {
+        let vx = self.registers[x as usize];
+        let vy = self.registers[y as usize];
+
+        self.registers[x as usize] = vx ^ vy;
     }
 
     fn op_8xy4(&mut self, x: u8, y: u8) {
@@ -215,6 +250,13 @@ impl CPU {
         self.registers[0xF as usize] = borrow as u8;
     }
 
+    fn op_8xy6(&mut self, x: u8, y: u8) {
+        let vy = self.registers[y as usize];
+
+        self.registers[x as usize] = vy >> 1;
+        self.registers[0xF as usize] = vy & 0x1;
+    }
+
     fn op_8xy7(&mut self, x: u8, y: u8) {
         let vx = self.registers[x as usize];
         let vy = self.registers[y as usize];
@@ -223,6 +265,13 @@ impl CPU {
 
         self.registers[x as usize] = val;
         self.registers[0xF as usize] = borrow as u8;
+    }
+
+    fn op_8xye(&mut self, x: u8, y: u8) {
+        let vy = self.registers[y as usize];
+
+        self.registers[x as usize] = vy << 1;
+        self.registers[0xF as usize] = (vy & 0x80) >> 7;
     }
 
     fn op_annn(&mut self, nnn: u16) {

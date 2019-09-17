@@ -1,6 +1,24 @@
 use super::CPU;
 
 #[test]
+fn op_00e0() {
+    let mut cpu = CPU::new();
+    cpu.opcode = 0x00E0;
+
+    cpu.execute_opcode();
+
+    let mut has_unset_px = false;
+
+    for y in 0..32 {
+        for x in 0..64 {
+            has_unset_px &= cpu.gfx[x][y];
+        }
+    }
+
+    assert_eq!(has_unset_px, false);
+}
+
+#[test]
 fn op_00ee() {
     let mut cpu = CPU::new();
     cpu.opcode = 0x00EE;
@@ -76,6 +94,30 @@ fn op_4xnn_false() {
 }
 
 #[test]
+fn op_5xy0_true() {
+    let mut cpu = CPU::new();
+    cpu.opcode = 0x5200;
+    cpu.registers[2] = 2;
+    cpu.registers[0] = 2;
+
+    cpu.execute_opcode();
+
+    assert_eq!(cpu.program_counter, 0x200 + 2);
+}
+
+#[test]
+fn op_5xy0_false() {
+    let mut cpu = CPU::new();
+    cpu.opcode = 0x5200;
+    cpu.registers[2] = 2;
+    cpu.registers[0] = 1;
+
+    cpu.execute_opcode();
+
+    assert_eq!(cpu.program_counter, 0x200);
+}
+
+#[test]
 fn op_6xnn() {
     let mut cpu = CPU::new();
     cpu.opcode = 0x6A02;
@@ -119,6 +161,30 @@ fn op_8xy0() {
 }
 
 #[test]
+fn op_8xy1() {
+    let mut cpu = CPU::new();
+    cpu.opcode = 0x8431;
+    cpu.registers[3] = 0x1;
+    cpu.registers[4] = 0x2;
+
+    cpu.execute_opcode();
+
+    assert_eq!(cpu.registers[4], 0x3);
+}
+
+#[test]
+fn op_8xy1_same() {
+    let mut cpu = CPU::new();
+    cpu.opcode = 0x8431;
+    cpu.registers[3] = 0x2;
+    cpu.registers[4] = 0x2;
+
+    cpu.execute_opcode();
+
+    assert_eq!(cpu.registers[4], 0x2);
+}
+
+#[test]
 fn op_8xy2_dont_flip() {
     let mut cpu = CPU::new();
     cpu.opcode = 0x8432;
@@ -140,6 +206,30 @@ fn op_8xy2_flip() {
     cpu.execute_opcode();
 
     assert_eq!(cpu.registers[4], 0);
+}
+
+#[test]
+fn op_8xy3() {
+    let mut cpu = CPU::new();
+    cpu.opcode = 0x8433;
+    cpu.registers[3] = 0x1;
+    cpu.registers[4] = 0x2;
+
+    cpu.execute_opcode();
+
+    assert_eq!(cpu.registers[4], 0x3);
+}
+
+#[test]
+fn op_8xy3_unset() {
+    let mut cpu = CPU::new();
+    cpu.opcode = 0x8433;
+    cpu.registers[3] = 0x2;
+    cpu.registers[4] = 0x2;
+
+    cpu.execute_opcode();
+
+    assert_eq!(cpu.registers[4], 0x0);
 }
 
 #[test]
@@ -195,6 +285,28 @@ fn op_8xy5_borrow() {
 }
 
 #[test]
+fn op_8xy6() {
+    let mut cpu = CPU::new();
+    cpu.opcode = 0x8986;
+    cpu.registers[8] = 0x2;
+
+    cpu.execute_opcode();
+    assert_eq!(cpu.registers[0x9], 0x1);
+    assert_eq!(cpu.registers[0xF], 0x0);
+}
+
+#[test]
+fn op_8xy6_shift() {
+    let mut cpu = CPU::new();
+    cpu.opcode = 0x8986;
+    cpu.registers[8] = 0x5;
+
+    cpu.execute_opcode();
+    assert_eq!(cpu.registers[0x9], 0x2);
+    assert_eq!(cpu.registers[0xF], 0x1);
+}
+
+#[test]
 fn op_8xy7_noborrow() {
     let mut cpu = CPU::new();
     cpu.opcode = 0x8987;
@@ -218,6 +330,28 @@ fn op_8xy7_borrow() {
 
     assert_eq!(cpu.registers[9], 0xFF);
     assert_eq!(cpu.registers[0xf], 1);
+}
+
+#[test]
+fn op_8xye() {
+    let mut cpu = CPU::new();
+    cpu.opcode = 0x898E;
+    cpu.registers[8] = 0x2;
+
+    cpu.execute_opcode();
+    assert_eq!(cpu.registers[0x9], 0x4);
+    assert_eq!(cpu.registers[0xF], 0x0);
+}
+
+#[test]
+fn op_8xye_shift() {
+    let mut cpu = CPU::new();
+    cpu.opcode = 0x898E;
+    cpu.registers[8] = 0xFF;
+
+    cpu.execute_opcode();
+    assert_eq!(cpu.registers[0x9], 0xFE);
+    assert_eq!(cpu.registers[0xF], 0x1);
 }
 
 #[test]
