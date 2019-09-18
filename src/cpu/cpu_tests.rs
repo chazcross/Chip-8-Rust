@@ -355,6 +355,30 @@ fn op_8xye_shift() {
 }
 
 #[test]
+fn op_9xy0_true() {
+    let mut cpu = CPU::new();
+    cpu.opcode = 0x9230;
+    cpu.registers[2] = 0;
+    cpu.registers[3] = 1;
+
+    cpu.execute_opcode();
+
+    assert_eq!(cpu.program_counter, 0x200 + 2);
+}
+
+#[test]
+fn op_xy0_false() {
+    let mut cpu = CPU::new();
+    cpu.opcode = 0x3230;
+    cpu.registers[2] = 1;
+    cpu.registers[3] = 1;
+
+    cpu.execute_opcode();
+
+    assert_eq!(cpu.program_counter, 0x200);
+}
+
+#[test]
 fn op_annn() {
     let mut cpu = CPU::new();
     cpu.opcode = 0xA2EA;

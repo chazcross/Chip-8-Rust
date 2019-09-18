@@ -38,6 +38,7 @@ impl TerminalApp {
 
             let backend = CrosstermBackend::new();
             let mut terminal = Terminal::new(backend).unwrap();
+            terminal.hide_cursor().unwrap();
             terminal.clear().unwrap();
 
             loop {
