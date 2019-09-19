@@ -117,7 +117,7 @@ impl CPU {
                 0x800E => self.op_8xye(x, y),
                 _ => self.op_ni(),
             },
-            0x9000 => self.op_ni(),
+            0x9000 => self.op_9xy0(x, y),
             0xA000 => self.op_annn(nnn),
             0xB000 => self.op_ni(),
             0xC000 => self.op_cxnn(x, nn),
@@ -272,6 +272,15 @@ impl CPU {
 
         self.registers[x as usize] = vy << 1;
         self.registers[0xF as usize] = (vy & 0x80) >> 7;
+    }
+
+    fn op_9xy0(&mut self, x: u8, y: u8) {
+        let vx = self.registers[x as usize];
+        let vy = self.registers[y as usize];
+
+        if vx != vy {
+            self.program_counter += 2;
+        }
     }
 
     fn op_annn(&mut self, nnn: u16) {
