@@ -8,6 +8,7 @@ edition = "2018"
 
 [dependencies]
 rand = "0.7.0"
+minifb = "0.13"
 crossterm = "0.10.2"
 
 [dependencies.tui]

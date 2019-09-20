@@ -44,7 +44,7 @@ impl CPU {
     }
 
     pub fn read_file(&mut self) {
-        let file = File::open("../roms/PONG.c8").unwrap();
+        let file = File::open("roms/PONG.c8").unwrap();
 
         for byte in file.bytes() {
             self.memory[self.program_counter as usize] = byte.unwrap();
