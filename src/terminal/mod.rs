@@ -103,6 +103,28 @@ impl TerminalApp {
             .borders(Borders::ALL)
             .title_style(Style::default());
 
+        let mut keys: String = String::from("");
+
+        match self.cpu.key_press {
+            Some(0x0) => keys += " 0",
+            Some(0x1) => keys += " 1",
+            Some(0x2) => keys += " 2",
+            Some(0x3) => keys += " 3",
+            Some(0x4) => keys += " 4",
+            Some(0x5) => keys += " 5",
+            Some(0x6) => keys += " 6",
+            Some(0x7) => keys += " 7",
+            Some(0x8) => keys += " 8",
+            Some(0x9) => keys += " 9",
+            Some(0xA) => keys += " A",
+            Some(0xB) => keys += " B",
+            Some(0xC) => keys += " C",
+            Some(0xD) => keys += " D",
+            Some(0xE) => keys += " E",
+            Some(0xF) => keys += " F",
+            _ => {}
+        }
+
         let text = [
             Text::styled(format!("Opcode: {:#x} \n", self.cpu.opcode), style),
             Text::styled(
@@ -185,7 +207,7 @@ impl TerminalApp {
                 format!("Sound Counter: {:#x} \n", self.cpu.sound_timer),
                 style,
             ),
-            Text::styled(format!("Key: {:#x} \n", self.cpu.key_press), style),
+            Text::styled(format!("Key: {} \n", keys), style),
         ];
 
         Paragraph::new(text.iter())
@@ -227,37 +249,22 @@ impl TerminalApp {
         match key_event {
             InputEvent::Keyboard(k) => match k {
                 KeyEvent::Char(c) => match c {
-                    '0' => {
-                        self.cpu.key_press = 0x0;
-                    }
-                    '1' => {
-                        self.cpu.key_press = 0x1;
-                    }
-                    '2' => {
-                        self.cpu.key_press = 0x2;
-                    }
-                    '3' => {
-                        self.cpu.key_press = 0x3;
-                    }
-                    '4' => {
-                        self.cpu.key_press = 0x4;
-                    }
-                    '5' => {
-                        self.cpu.key_press = 0x5;
-                    }
-                    '6' => {
-                        self.cpu.key_press = 0x6;
-                    }
-                    '7' => {
-                        self.cpu.key_press = 0x7;
-                    }
-                    '8' => {
-                        self.cpu.key_press = 0x8;
-                    }
-                    '9' => {
-                        self.cpu.key_press = 0x9;
-                    }
-
+                    '0' => self.cpu.press_key(Some(0x0)),
+                    '1' => self.cpu.press_key(Some(0x1)),
+                    '2' => self.cpu.press_key(Some(0x2)),
+                    '3' => self.cpu.press_key(Some(0x3)),
+                    '4' => self.cpu.press_key(Some(0x4)),
+                    '5' => self.cpu.press_key(Some(0x5)),
+                    '6' => self.cpu.press_key(Some(0x6)),
+                    '7' => self.cpu.press_key(Some(0x7)),
+                    '8' => self.cpu.press_key(Some(0x8)),
+                    '9' => self.cpu.press_key(Some(0x9)),
+                    'a' => self.cpu.press_key(Some(0xA)),
+                    'b' => self.cpu.press_key(Some(0xB)),
+                    'c' => self.cpu.press_key(Some(0xC)),
+                    'd' => self.cpu.press_key(Some(0xD)),
+                    'e' => self.cpu.press_key(Some(0xE)),
+                    'f' => self.cpu.press_key(Some(0xF)),
                     'q' => {
                         println!("The 'q' key is hit and the program is not listening to input anymore.\n\n");
                         return true;
@@ -279,7 +286,7 @@ impl TerminalApp {
                 }
                 _ => {}
             },
-            _ => {}
+            _ => self.cpu.press_key(None),
         }
 
         return false;

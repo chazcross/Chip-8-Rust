@@ -401,7 +401,7 @@ fn op_exa1_pressed() {
     let mut cpu = CPU::new();
     cpu.opcode = 0xE1A1;
     cpu.registers[0x1] = 1;
-    cpu.key_press = 1;
+    cpu.press_key(Some(1));
 
     cpu.execute_opcode();
 
@@ -413,7 +413,7 @@ fn op_exa1_not_pressed() {
     let mut cpu = CPU::new();
     cpu.opcode = 0xE1A1;
     cpu.registers[0x1] = 1;
-    cpu.key_press = 2;
+    cpu.press_key(Some(2));
 
     cpu.execute_opcode();
 

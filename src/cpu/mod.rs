@@ -17,8 +17,7 @@ pub struct CPU {
     pub sound_timer: u8,
     pub stack: Vec<u16>,
     pub sp: u8,
-    pub key: [u8; 16],
-    pub key_press: u8,
+    pub key_press: Option<u8>,
     pub program_size: u16,
 }
 
@@ -35,8 +34,7 @@ impl CPU {
             sound_timer: 0,
             stack: vec![],
             sp: 0,
-            key: [0; 16],
-            key_press: 0,
+            key_press: None,
             program_size: 0,
         };
 
@@ -313,7 +311,7 @@ impl CPU {
 
     fn op_exa1(&mut self, x: u8) {
         let vx = self.registers[x as usize];
-        if vx != self.key_press {
+        if !self.is_key_press(vx) {
             self.program_counter += 2;
         }
     }
@@ -361,6 +359,18 @@ impl CPU {
             let i_val = self.memory[(self.i_register + i) as usize];
             self.registers[i as usize] = i_val;
         }
+    }
+
+    pub fn press_key(&mut self, key: Option<u8>) {
+        self.key_press = key;
+    }
+
+    fn is_key_press(&mut self, key_code: u8) -> bool {
+        if let Some(key) = self.key_press {
+            return key == key_code;
+        }
+
+        return false;
     }
 }
 
