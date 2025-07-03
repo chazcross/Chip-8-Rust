@@ -44,6 +44,24 @@ impl WindowApp {
 
         while window.is_open() && !window.is_key_down(Key::Escape) {
             let mut addr: u32 = 0;
+            
+            if window.is_key_down(Key::Key1) { self.cpu.press_key(Some(0x1)); }
+            else if window.is_key_down(Key::Key2) { self.cpu.press_key(Some(0x2)); }
+            else if window.is_key_down(Key::Key3) { self.cpu.press_key(Some(0x3)); }
+            else if window.is_key_down(Key::Key4) { self.cpu.press_key(Some(0xC)); }
+            else if window.is_key_down(Key::Q) { self.cpu.press_key(Some(0x4)); }
+            else if window.is_key_down(Key::W) { self.cpu.press_key(Some(0x5)); }
+            else if window.is_key_down(Key::E) { self.cpu.press_key(Some(0x6)); }
+            else if window.is_key_down(Key::R) { self.cpu.press_key(Some(0xD)); }
+            else if window.is_key_down(Key::A) { self.cpu.press_key(Some(0x7)); }
+            else if window.is_key_down(Key::S) { self.cpu.press_key(Some(0x8)); }
+            else if window.is_key_down(Key::D) { self.cpu.press_key(Some(0x9)); }
+            else if window.is_key_down(Key::F) { self.cpu.press_key(Some(0xE)); }
+            else if window.is_key_down(Key::Z) { self.cpu.press_key(Some(0xA)); }
+            else if window.is_key_down(Key::X) { self.cpu.press_key(Some(0x0)); }
+            else if window.is_key_down(Key::C) { self.cpu.press_key(Some(0xB)); }
+            else if window.is_key_down(Key::V) { self.cpu.press_key(Some(0xF)); }
+            else { self.cpu.press_key(None); }
 
             self.cpu.do_cycle();
 
