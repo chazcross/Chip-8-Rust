@@ -268,7 +268,7 @@ fn op_8xy5_noborrow() {
     cpu.execute_opcode();
 
     assert_eq!(cpu.registers[0x9], 1);
-    assert_eq!(cpu.registers[0xf], 0);
+    assert_eq!(cpu.registers[0xf], 1); // VF=1 when NO borrow occurs
 }
 
 #[test]
@@ -281,7 +281,7 @@ fn op_8xy5_borrow() {
     cpu.execute_opcode();
 
     assert_eq!(cpu.registers[0x9], 0x3);
-    assert_eq!(cpu.registers[0xf], 1);
+    assert_eq!(cpu.registers[0xf], 0); // VF=0 when borrow occurs
 }
 
 #[test]
@@ -316,7 +316,7 @@ fn op_8xy7_noborrow() {
     cpu.execute_opcode();
 
     assert_eq!(cpu.registers[9], 0x1);
-    assert_eq!(cpu.registers[0xf], 0);
+    assert_eq!(cpu.registers[0xf], 1); // VF=1 when NO borrow occurs
 }
 
 #[test]
@@ -329,7 +329,7 @@ fn op_8xy7_borrow() {
     cpu.execute_opcode();
 
     assert_eq!(cpu.registers[9], 0xFF);
-    assert_eq!(cpu.registers[0xf], 1);
+    assert_eq!(cpu.registers[0xf], 0); // VF=0 when borrow occurs
 }
 
 #[test]
@@ -464,16 +464,16 @@ fn op_fx1e() {
     assert_eq!(cpu.i_register, 9);
 }
 
-// #[test]
-// fn op_fx29() {
-//     let mut cpu = CPU::new();
-//     cpu.opcode = 0xFA29;
-//     cpu.registers[0xA] = 9;
+#[test]
+fn op_fx29() {
+    let mut cpu = CPU::new();
+    cpu.opcode = 0xFA29;
+    cpu.registers[0xA] = 9;
 
-//     cpu.execute_opcode();
+    cpu.execute_opcode();
 
-//     assert_eq!(cpu.i_register, 9);
-// }
+    assert_eq!(cpu.i_register, 0x50 + (9 * 5)); // Font at 0x50 + (char * 5)
+}
 
 #[test]
 fn op_fx33() {

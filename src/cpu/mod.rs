@@ -245,7 +245,7 @@ impl CPU {
         let (val, borrow) = vx.overflowing_sub(vy);
 
         self.registers[x as usize] = val;
-        self.registers[0xF as usize] = borrow as u8;
+        self.registers[0xF as usize] = (!borrow) as u8;
     }
 
     fn op_8xy6(&mut self, x: u8, y: u8) {
@@ -262,7 +262,7 @@ impl CPU {
         let (val, borrow) = vy.overflowing_sub(vx);
 
         self.registers[x as usize] = val;
-        self.registers[0xF as usize] = borrow as u8;
+        self.registers[0xF as usize] = (!borrow) as u8;
     }
 
     fn op_8xye(&mut self, x: u8, y: u8) {
@@ -338,7 +338,7 @@ impl CPU {
     fn op_fx29(&mut self, x: u8) {
         let vx = self.registers[x as usize] as u16;
 
-        self.i_register = vx * 5;
+        self.i_register = 0x50 + (vx * 5);
     }
 
     fn op_fx33(&mut self, x: u8) {
