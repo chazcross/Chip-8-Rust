@@ -145,6 +145,7 @@ impl CPU {
         );
     }
 
+    // 00E0: Clear the display
     fn op_00e0(&mut self) {
         for y in 0..32 {
             for x in 0..64 {
@@ -153,20 +154,24 @@ impl CPU {
         }
     }
 
+    // 00EE: Return from subroutine
     fn op_00ee(&mut self) {
         let pc = self.stack.pop().unwrap();
         self.program_counter = pc;
     }
 
+    // 1NNN: Jump to address NNN
     fn op_1nnn(&mut self, nnn: u16) {
         self.program_counter = nnn;
     }
 
+    // 2NNN: Call subroutine at NNN
     fn op_2nnn(&mut self, nnn: u16) {
         self.stack.push(self.program_counter);
         self.program_counter = nnn;
     }
 
+    // 3XNN: Skip next instruction if VX equals NN
     fn op_3xnn(&mut self, x: u8, nn: u8) {
         let vx = self.registers[x as usize];
 
@@ -175,6 +180,7 @@ impl CPU {
         }
     }
 
+    // 4XNN: Skip next instruction if VX does not equal NN
     fn op_4xnn(&mut self, x: u8, nn: u8) {
         let vx = self.registers[x as usize];
 
@@ -183,6 +189,7 @@ impl CPU {
         }
     }
 
+    // 5XY0: Skip next instruction if VX equals VY
     fn op_5xy0(&mut self, x: u8, y: u8) {
         let vx = self.registers[x as usize];
         let vy = self.registers[y as usize];
@@ -192,21 +199,25 @@ impl CPU {
         }
     }
 
+    // 6XNN: Set VX to NN
     fn op_6xnn(&mut self, x: u8, nn: u8) {
         self.registers[x as usize] = nn;
     }
 
+    // 7XNN: Add NN to VX (carry flag not changed)
     fn op_7xnn(&mut self, x: u8, nn: u8) {
         let vx = self.registers[x as usize];
         self.registers[x as usize] = vx.wrapping_add(nn);
     }
 
+    // 8XY0: Set VX to the value of VY
     fn op_8xy0(&mut self, x: u8, y: u8) {
         let vy = self.registers[y as usize];
 
         self.registers[x as usize] = vy;
     }
 
+    // 8XY1: Set VX to VX OR VY
     fn op_8xy1(&mut self, x: u8, y: u8) {
         let vx = self.registers[x as usize];
         let vy = self.registers[y as usize];
@@ -214,6 +225,7 @@ impl CPU {
         self.registers[x as usize] = vx | vy;
     }
 
+    // 8XY2: Set VX to VX AND VY
     fn op_8xy2(&mut self, x: u8, y: u8) {
         let vx = self.registers[x as usize];
         let vy = self.registers[y as usize];
@@ -221,6 +233,7 @@ impl CPU {
         self.registers[x as usize] = vx & vy;
     }
 
+    // 8XY3: Set VX to VX XOR VY
     fn op_8xy3(&mut self, x: u8, y: u8) {
         let vx = self.registers[x as usize];
         let vy = self.registers[y as usize];
@@ -228,6 +241,7 @@ impl CPU {
         self.registers[x as usize] = vx ^ vy;
     }
 
+    // 8XY4: Add VY to VX. VF is set to 1 when there's a carry, 0 otherwise
     fn op_8xy4(&mut self, x: u8, y: u8) {
         let vx = self.registers[x as usize];
         let vy = self.registers[y as usize];
@@ -238,6 +252,7 @@ impl CPU {
         self.registers[0xF as usize] = overflow as u8;
     }
 
+    // 8XY5: Subtract VY from VX. VF is set to 0 when there's a borrow, 1 otherwise
     fn op_8xy5(&mut self, x: u8, y: u8) {
         let vx = self.registers[x as usize];
         let vy = self.registers[y as usize];
@@ -248,6 +263,7 @@ impl CPU {
         self.registers[0xF as usize] = (!borrow) as u8;
     }
 
+    // 8XY6: Store the least significant bit of VY in VF and shift VY right by 1, store result in VX
     fn op_8xy6(&mut self, x: u8, y: u8) {
         let vy = self.registers[y as usize];
 
@@ -255,6 +271,7 @@ impl CPU {
         self.registers[0xF as usize] = vy & 0x1;
     }
 
+    // 8XY7: Set VX to VY minus VX. VF is set to 0 when there's a borrow, 1 otherwise
     fn op_8xy7(&mut self, x: u8, y: u8) {
         let vx = self.registers[x as usize];
         let vy = self.registers[y as usize];
@@ -265,6 +282,7 @@ impl CPU {
         self.registers[0xF as usize] = (!borrow) as u8;
     }
 
+    // 8XYE: Store the most significant bit of VY in VF and shift VY left by 1, store result in VX
     fn op_8xye(&mut self, x: u8, y: u8) {
         let vy = self.registers[y as usize];
 
@@ -272,6 +290,7 @@ impl CPU {
         self.registers[0xF as usize] = (vy & 0x80) >> 7;
     }
 
+    // 9XY0: Skip next instruction if VX does not equal VY
     fn op_9xy0(&mut self, x: u8, y: u8) {
         let vx = self.registers[x as usize];
         let vy = self.registers[y as usize];
@@ -281,15 +300,18 @@ impl CPU {
         }
     }
 
+    // ANNN: Set I to the address NNN
     fn op_annn(&mut self, nnn: u16) {
         self.i_register = nnn;
     }
 
+    // CXNN: Set VX to the result of a bitwise AND operation on a random number and NN
     fn op_cxnn(&mut self, x: u8, nn: u8) {
         let random = rand::random::<u8>();
         self.registers[x as usize] = nn & random;
     }
 
+    // DXYN: Draw a sprite at coordinate (VX, VY) with N bytes of sprite data starting at address I
     fn op_dxyn(&mut self, x: usize, y: usize, rows: usize) {
         let vx = self.registers[x];
         let vy = self.registers[y];
@@ -309,6 +331,7 @@ impl CPU {
         }
     }
 
+    // EXA1: Skip next instruction if key stored in VX is not pressed
     fn op_exa1(&mut self, x: u8) {
         let vx = self.registers[x as usize];
         if !self.is_key_press(vx) {
@@ -316,31 +339,37 @@ impl CPU {
         }
     }
 
+    // FX07: Set VX to the value of the delay timer
     fn op_fx07(&mut self, x: u8) {
         self.registers[x as usize] = self.delay_timer;
     }
 
+    // FX18: Set the sound timer to VX
     fn op_fx18(&mut self, x: u8) {
         let vx = self.registers[x as usize] as u8;
         self.sound_timer = vx;
     }
 
+    // FX15: Set the delay timer to VX
     fn op_fx15(&mut self, x: u8) {
         let vx = self.registers[x as usize] as u8;
         self.delay_timer = vx;
     }
 
+    // FX1E: Add VX to I
     fn op_fx1e(&mut self, x: u8) {
         let vx = self.registers[x as usize] as u16;
         self.i_register += vx;
     }
 
+    // FX29: Set I to the location of the sprite for the character in VX
     fn op_fx29(&mut self, x: u8) {
         let vx = self.registers[x as usize] as u16;
 
         self.i_register = vx * 5;
     }
 
+    // FX33: Store the binary-coded decimal representation of VX at addresses I, I+1, and I+2
     fn op_fx33(&mut self, x: u8) {
         let vx = self.registers[x as usize];
         let hundreds = (vx / 100) as u8;
@@ -352,6 +381,7 @@ impl CPU {
         self.memory[self.i_register as usize + 2] = ones;
     }
 
+    // FX65: Fill V0 to VX (including VX) with values from memory starting at address I
     fn op_fx65(&mut self, x: u8) {
         let dl = x + 1;
 
