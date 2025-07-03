@@ -3,13 +3,12 @@ extern crate crossterm;
 use crossterm::{terminal, event::{self, Event, KeyCode, KeyEvent}};
 use std::convert::AsRef;
 use std::io::stdout;
-use tui::backend::Backend;
-use tui::backend::CrosstermBackend;
-use tui::layout::{Constraint, Direction, Layout, Rect};
-use tui::style::{Color, Style};
-use tui::widgets::{Block, Borders, List, ListItem, Paragraph};
-use tui::text::{Text, Spans};
-use tui::{Frame, Terminal};
+use ratatui::backend::CrosstermBackend;
+use ratatui::layout::{Constraint, Direction, Layout, Rect};
+use ratatui::style::{Color, Style};
+use ratatui::widgets::{Block, Borders, List, ListItem, Paragraph};
+use ratatui::text::{Text, Line};
+use ratatui::{Frame, Terminal};
 
 use super::cpu;
 use super::cpu::disassembler;
@@ -65,7 +64,7 @@ impl TerminalApp {
                                 ]
                                 .as_ref(),
                             )
-                            .split(f.size());
+                            .split(f.area());
 
                         self.display_disassemble_program(&mut f, chunks[0]);
                         self.display_executing_instruction(&mut f, chunks[1]);
@@ -78,11 +77,11 @@ impl TerminalApp {
         Ok(())
     }
 
-    pub fn display_disassemble_program<B: Backend>(&mut self, f: &mut Frame<B>, chunk: Rect) {
+    pub fn display_disassemble_program(&mut self, f: &mut Frame, chunk: Rect) {
         let style = Style::default().fg(Color::White);
 
         let items: Vec<ListItem> = self.items.iter().skip(self.offset as usize).map(|item| {
-            ListItem::new(Spans::from(vec![tui::text::Span::styled(
+            ListItem::new(Line::from(vec![ratatui::text::Span::styled(
                 format!(
                     "{:#x} {:#x} {}",
                     item.memory_location, item.opcode, item.assembly
@@ -101,7 +100,7 @@ impl TerminalApp {
         f.render_widget(list_widget, chunk);
     }
 
-    pub fn display_executing_instruction<B: Backend>(&mut self, f: &mut Frame<B>, chunk: Rect) {
+    pub fn display_executing_instruction(&mut self, f: &mut Frame, chunk: Rect) {
         let style = Style::default().fg(Color::White);
 
         let block = Block::default()
@@ -131,88 +130,88 @@ impl TerminalApp {
         }
 
         let text = vec![
-            Spans::from(vec![tui::text::Span::styled(format!("Opcode: {:#x}", self.cpu.opcode), style)]),
-            Spans::from(vec![tui::text::Span::styled(
+            Line::from(vec![ratatui::text::Span::styled(format!("Opcode: {:#x}", self.cpu.opcode), style)]),
+            Line::from(vec![ratatui::text::Span::styled(
                 format!("Program Counter: {:#x}", self.cpu.program_counter),
                 style,
             )]),
-            Spans::from(vec![tui::text::Span::styled(
+            Line::from(vec![ratatui::text::Span::styled(
                 format!("Register [I]: {:#x}", self.cpu.i_register),
                 style,
             )]),
-            Spans::from(vec![tui::text::Span::styled(
+            Line::from(vec![ratatui::text::Span::styled(
                 format!("Register {}: {:#x}", 0, self.cpu.registers[0]),
                 style,
             )]),
-            Spans::from(vec![tui::text::Span::styled(
+            Line::from(vec![ratatui::text::Span::styled(
                 format!("Register {}: {:#x}", 1, self.cpu.registers[1]),
                 style,
             )]),
-            Spans::from(vec![tui::text::Span::styled(
+            Line::from(vec![ratatui::text::Span::styled(
                 format!("Register {}: {:#x}", 2, self.cpu.registers[2]),
                 style,
             )]),
-            Spans::from(vec![tui::text::Span::styled(
+            Line::from(vec![ratatui::text::Span::styled(
                 format!("Register {}: {:#x}", 3, self.cpu.registers[3]),
                 style,
             )]),
-            Spans::from(vec![tui::text::Span::styled(
+            Line::from(vec![ratatui::text::Span::styled(
                 format!("Register {}: {:#x}", 4, self.cpu.registers[4]),
                 style,
             )]),
-            Spans::from(vec![tui::text::Span::styled(
+            Line::from(vec![ratatui::text::Span::styled(
                 format!("Register {}: {:#x}", 5, self.cpu.registers[5]),
                 style,
             )]),
-            Spans::from(vec![tui::text::Span::styled(
+            Line::from(vec![ratatui::text::Span::styled(
                 format!("Register {}: {:#x}", 6, self.cpu.registers[6]),
                 style,
             )]),
-            Spans::from(vec![tui::text::Span::styled(
+            Line::from(vec![ratatui::text::Span::styled(
                 format!("Register {}: {:#x}", 7, self.cpu.registers[7]),
                 style,
             )]),
-            Spans::from(vec![tui::text::Span::styled(
+            Line::from(vec![ratatui::text::Span::styled(
                 format!("Register {}: {:#x}", 8, self.cpu.registers[8]),
                 style,
             )]),
-            Spans::from(vec![tui::text::Span::styled(
+            Line::from(vec![ratatui::text::Span::styled(
                 format!("Register {}: {:#x}", 9, self.cpu.registers[9]),
                 style,
             )]),
-            Spans::from(vec![tui::text::Span::styled(
+            Line::from(vec![ratatui::text::Span::styled(
                 format!("Register {}: {:#x}", 10, self.cpu.registers[10]),
                 style,
             )]),
-            Spans::from(vec![tui::text::Span::styled(
+            Line::from(vec![ratatui::text::Span::styled(
                 format!("Register {}: {:#x}", 11, self.cpu.registers[11]),
                 style,
             )]),
-            Spans::from(vec![tui::text::Span::styled(
+            Line::from(vec![ratatui::text::Span::styled(
                 format!("Register {}: {:#x}", 12, self.cpu.registers[12]),
                 style,
             )]),
-            Spans::from(vec![tui::text::Span::styled(
+            Line::from(vec![ratatui::text::Span::styled(
                 format!("Register {}: {:#x}", 13, self.cpu.registers[13]),
                 style,
             )]),
-            Spans::from(vec![tui::text::Span::styled(
+            Line::from(vec![ratatui::text::Span::styled(
                 format!("Register {}: {:#x}", 14, self.cpu.registers[14]),
                 style,
             )]),
-            Spans::from(vec![tui::text::Span::styled(
+            Line::from(vec![ratatui::text::Span::styled(
                 format!("Register {}: {:#x}", 15, self.cpu.registers[15]),
                 style,
             )]),
-            Spans::from(vec![tui::text::Span::styled(
+            Line::from(vec![ratatui::text::Span::styled(
                 format!("Delay Counter: {:#x}", self.cpu.delay_timer),
                 style,
             )]),
-            Spans::from(vec![tui::text::Span::styled(
+            Line::from(vec![ratatui::text::Span::styled(
                 format!("Sound Counter: {:#x}", self.cpu.sound_timer),
                 style,
             )]),
-            Spans::from(vec![tui::text::Span::styled(format!("Key: {}", keys), style)]),
+            Line::from(vec![ratatui::text::Span::styled(format!("Key: {}", keys), style)]),
         ];
 
         let paragraph_widget = Paragraph::new(Text::from(text))
@@ -221,7 +220,7 @@ impl TerminalApp {
         f.render_widget(paragraph_widget, chunk);
     }
 
-    pub fn display_grfx<B: Backend>(&mut self, f: &mut Frame<B>, chunk: Rect) {
+    pub fn display_grfx(&mut self, f: &mut Frame, chunk: Rect) {
         let style = Style::default().fg(Color::White);
 
         let has_px = Style::default().fg(Color::White);
@@ -231,7 +230,7 @@ impl TerminalApp {
             .borders(Borders::ALL)
 ;
 
-        let mut text = vec![Spans::from(vec![tui::text::Span::styled("", style)])];
+        let mut text = vec![Line::from(vec![ratatui::text::Span::styled("", style)])];
 
         for y in 0..32 {
             let mut line_spans = vec![];
@@ -242,9 +241,9 @@ impl TerminalApp {
                     no_pxx
                 };
 
-                line_spans.push(tui::text::Span::styled(format!("{}", "\u{2588}"), color));
+                line_spans.push(ratatui::text::Span::styled(format!("{}", "\u{2588}"), color));
             }
-            text.push(Spans::from(line_spans));
+            text.push(Line::from(line_spans));
         }
 
         let paragraph_widget = Paragraph::new(Text::from(text))
