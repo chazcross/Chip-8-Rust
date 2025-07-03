@@ -1,12 +1,14 @@
 extern crate crossterm;
 
-use crossterm::{input, InputEvent, KeyEvent, RawScreen};
+use crossterm::{terminal, event::{self, Event, KeyCode, KeyEvent}};
 use std::convert::AsRef;
+use std::io::stdout;
 use tui::backend::Backend;
 use tui::backend::CrosstermBackend;
 use tui::layout::{Constraint, Direction, Layout, Rect};
 use tui::style::{Color, Style};
-use tui::widgets::{Block, Borders, List, Paragraph, Text, Widget};
+use tui::widgets::{Block, Borders, List, ListItem, Paragraph};
+use tui::text::{Text, Spans};
 use tui::{Frame, Terminal};
 
 use super::cpu;
@@ -31,20 +33,20 @@ impl TerminalApp {
         return app;
     }
 
-    pub fn run(&mut self) {
-        if let Ok(_raw) = RawScreen::into_raw_mode() {
-            let input = input();
-            let mut stdin = input.read_async();
-
-            let backend = CrosstermBackend::new();
+    pub fn run(&mut self) -> Result<(), Box<dyn std::error::Error>> {
+        terminal::enable_raw_mode()?;
+        
+        let backend = CrosstermBackend::new(stdout());
             let mut terminal = Terminal::new(backend).unwrap();
             terminal.hide_cursor().unwrap();
             terminal.clear().unwrap();
 
             loop {
-                if let Some(key_event) = stdin.next() {
-                    if self.process_input_event(key_event) {
-                        break;
+                if event::poll(std::time::Duration::from_millis(10))? {
+                    if let Event::Key(key_event) = event::read()? {
+                        if self.process_input_event(key_event) {
+                            break;
+                        }
                     }
                 }
 
@@ -71,29 +73,32 @@ impl TerminalApp {
                     })
                     .unwrap();
             }
-        }
+        
+        terminal::disable_raw_mode()?;
+        Ok(())
     }
 
     pub fn display_disassemble_program<B: Backend>(&mut self, f: &mut Frame<B>, chunk: Rect) {
         let style = Style::default().fg(Color::White);
 
-        let items = self.items.iter().skip(self.offset as usize).map(|item| {
-            Text::styled(
+        let items: Vec<ListItem> = self.items.iter().skip(self.offset as usize).map(|item| {
+            ListItem::new(Spans::from(vec![tui::text::Span::styled(
                 format!(
                     "{:#x} {:#x} {}",
                     item.memory_location, item.opcode, item.assembly
                 ),
                 style,
-            )
-        });
+            )]))
+        }).collect();
 
-        List::new(items)
+        let list_widget = List::new(items)
             .block(
                 Block::default()
                     .borders(Borders::ALL)
                     .title("pgup/pgdown to scroll"),
-            )
-            .render(f, chunk);
+            );
+        
+        f.render_widget(list_widget, chunk);
     }
 
     pub fn display_executing_instruction<B: Backend>(&mut self, f: &mut Frame<B>, chunk: Rect) {
@@ -101,7 +106,7 @@ impl TerminalApp {
 
         let block = Block::default()
             .borders(Borders::ALL)
-            .title_style(Style::default());
+;
 
         let mut keys: String = String::from("");
 
@@ -125,94 +130,95 @@ impl TerminalApp {
             _ => {}
         }
 
-        let text = [
-            Text::styled(format!("Opcode: {:#x} \n", self.cpu.opcode), style),
-            Text::styled(
-                format!("Program Counter: {:#x} \n", self.cpu.program_counter),
+        let text = vec![
+            Spans::from(vec![tui::text::Span::styled(format!("Opcode: {:#x}", self.cpu.opcode), style)]),
+            Spans::from(vec![tui::text::Span::styled(
+                format!("Program Counter: {:#x}", self.cpu.program_counter),
                 style,
-            ),
-            Text::styled(
-                format!("Register [I]: {:#x} \n", self.cpu.i_register),
+            )]),
+            Spans::from(vec![tui::text::Span::styled(
+                format!("Register [I]: {:#x}", self.cpu.i_register),
                 style,
-            ),
-            Text::styled(
-                format!("Register {}: {:#x} \n", 0, self.cpu.registers[0]),
+            )]),
+            Spans::from(vec![tui::text::Span::styled(
+                format!("Register {}: {:#x}", 0, self.cpu.registers[0]),
                 style,
-            ),
-            Text::styled(
-                format!("Register {}: {:#x} \n", 1, self.cpu.registers[1]),
+            )]),
+            Spans::from(vec![tui::text::Span::styled(
+                format!("Register {}: {:#x}", 1, self.cpu.registers[1]),
                 style,
-            ),
-            Text::styled(
-                format!("Register {}: {:#x} \n", 2, self.cpu.registers[2]),
+            )]),
+            Spans::from(vec![tui::text::Span::styled(
+                format!("Register {}: {:#x}", 2, self.cpu.registers[2]),
                 style,
-            ),
-            Text::styled(
-                format!("Register {}: {:#x} \n", 3, self.cpu.registers[3]),
+            )]),
+            Spans::from(vec![tui::text::Span::styled(
+                format!("Register {}: {:#x}", 3, self.cpu.registers[3]),
                 style,
-            ),
-            Text::styled(
-                format!("Register {}: {:#x} \n", 4, self.cpu.registers[4]),
+            )]),
+            Spans::from(vec![tui::text::Span::styled(
+                format!("Register {}: {:#x}", 4, self.cpu.registers[4]),
                 style,
-            ),
-            Text::styled(
-                format!("Register {}: {:#x} \n", 5, self.cpu.registers[5]),
+            )]),
+            Spans::from(vec![tui::text::Span::styled(
+                format!("Register {}: {:#x}", 5, self.cpu.registers[5]),
                 style,
-            ),
-            Text::styled(
-                format!("Register {}: {:#x} \n", 6, self.cpu.registers[6]),
+            )]),
+            Spans::from(vec![tui::text::Span::styled(
+                format!("Register {}: {:#x}", 6, self.cpu.registers[6]),
                 style,
-            ),
-            Text::styled(
-                format!("Register {}: {:#x} \n", 7, self.cpu.registers[7]),
+            )]),
+            Spans::from(vec![tui::text::Span::styled(
+                format!("Register {}: {:#x}", 7, self.cpu.registers[7]),
                 style,
-            ),
-            Text::styled(
-                format!("Register {}: {:#x} \n", 8, self.cpu.registers[8]),
+            )]),
+            Spans::from(vec![tui::text::Span::styled(
+                format!("Register {}: {:#x}", 8, self.cpu.registers[8]),
                 style,
-            ),
-            Text::styled(
-                format!("Register {}: {:#x} \n", 9, self.cpu.registers[9]),
+            )]),
+            Spans::from(vec![tui::text::Span::styled(
+                format!("Register {}: {:#x}", 9, self.cpu.registers[9]),
                 style,
-            ),
-            Text::styled(
-                format!("Register {}: {:#x} \n", 10, self.cpu.registers[10]),
+            )]),
+            Spans::from(vec![tui::text::Span::styled(
+                format!("Register {}: {:#x}", 10, self.cpu.registers[10]),
                 style,
-            ),
-            Text::styled(
-                format!("Register {}: {:#x} \n", 11, self.cpu.registers[11]),
+            )]),
+            Spans::from(vec![tui::text::Span::styled(
+                format!("Register {}: {:#x}", 11, self.cpu.registers[11]),
                 style,
-            ),
-            Text::styled(
-                format!("Register {}: {:#x} \n", 12, self.cpu.registers[12]),
+            )]),
+            Spans::from(vec![tui::text::Span::styled(
+                format!("Register {}: {:#x}", 12, self.cpu.registers[12]),
                 style,
-            ),
-            Text::styled(
-                format!("Register {}: {:#x} \n", 13, self.cpu.registers[13]),
+            )]),
+            Spans::from(vec![tui::text::Span::styled(
+                format!("Register {}: {:#x}", 13, self.cpu.registers[13]),
                 style,
-            ),
-            Text::styled(
-                format!("Register {}: {:#x} \n", 14, self.cpu.registers[14]),
+            )]),
+            Spans::from(vec![tui::text::Span::styled(
+                format!("Register {}: {:#x}", 14, self.cpu.registers[14]),
                 style,
-            ),
-            Text::styled(
-                format!("Register {}: {:#x} \n", 15, self.cpu.registers[15]),
+            )]),
+            Spans::from(vec![tui::text::Span::styled(
+                format!("Register {}: {:#x}", 15, self.cpu.registers[15]),
                 style,
-            ),
-            Text::styled(
-                format!("Delay Counter: {:#x} \n", self.cpu.delay_timer),
+            )]),
+            Spans::from(vec![tui::text::Span::styled(
+                format!("Delay Counter: {:#x}", self.cpu.delay_timer),
                 style,
-            ),
-            Text::styled(
-                format!("Sound Counter: {:#x} \n", self.cpu.sound_timer),
+            )]),
+            Spans::from(vec![tui::text::Span::styled(
+                format!("Sound Counter: {:#x}", self.cpu.sound_timer),
                 style,
-            ),
-            Text::styled(format!("Key: {} \n", keys), style),
+            )]),
+            Spans::from(vec![tui::text::Span::styled(format!("Key: {}", keys), style)]),
         ];
 
-        Paragraph::new(text.iter())
-            .block(block.clone().title("CPU info"))
-            .render(f, chunk);
+        let paragraph_widget = Paragraph::new(Text::from(text))
+            .block(block.clone().title("CPU info"));
+        
+        f.render_widget(paragraph_widget, chunk);
     }
 
     pub fn display_grfx<B: Backend>(&mut self, f: &mut Frame<B>, chunk: Rect) {
@@ -223,11 +229,12 @@ impl TerminalApp {
 
         let block = Block::default()
             .borders(Borders::ALL)
-            .title_style(Style::default());
+;
 
-        let mut text = vec![Text::styled("", style)];
+        let mut text = vec![Spans::from(vec![tui::text::Span::styled("", style)])];
 
         for y in 0..32 {
+            let mut line_spans = vec![];
             for x in 0..64 {
                 let color = if self.cpu.gfx[x][y] == true {
                     has_px
@@ -235,20 +242,20 @@ impl TerminalApp {
                     no_pxx
                 };
 
-                text.push(Text::styled(format!("{}", "\u{2588}"), color));
+                line_spans.push(tui::text::Span::styled(format!("{}", "\u{2588}"), color));
             }
-            text.push(Text::styled(format!("{}", "\n"), style));
+            text.push(Spans::from(line_spans));
         }
 
-        Paragraph::new(text.iter())
-            .block(block.clone().title("UI"))
-            .render(f, chunk);
+        let paragraph_widget = Paragraph::new(Text::from(text))
+            .block(block.clone().title("UI"));
+        
+        f.render_widget(paragraph_widget, chunk);
     }
 
-    pub fn process_input_event(&mut self, key_event: InputEvent) -> bool {
-        match key_event {
-            InputEvent::Keyboard(k) => match k {
-                KeyEvent::Char(c) => match c {
+    pub fn process_input_event(&mut self, key_event: KeyEvent) -> bool {
+        match key_event.code {
+            KeyCode::Char(c) => match c {
                     '0' => self.cpu.press_key(Some(0x0)),
                     '1' => self.cpu.press_key(Some(0x1)),
                     '2' => self.cpu.press_key(Some(0x2)),
@@ -270,22 +277,20 @@ impl TerminalApp {
                         return true;
                     }
                     _ => {}
-                },
-                KeyEvent::PageUp => {
-                    if self.offset != 0 {
-                        self.offset -= 10;
-                    }
                 }
-                KeyEvent::PageDown => {
-                    if self.offset + 1 < self.cpu.program_size {
-                        self.offset += 10;
-                    }
+            KeyCode::PageUp => {
+                if self.offset != 0 {
+                    self.offset -= 10;
                 }
-                KeyEvent::Down => {
-                    //self.cpu.do_cycle();
+            }
+            KeyCode::PageDown => {
+                if self.offset + 1 < self.cpu.program_size {
+                    self.offset += 10;
                 }
-                _ => {}
-            },
+            }
+            KeyCode::Down => {
+                //self.cpu.do_cycle();
+            }
             _ => self.cpu.press_key(None),
         }
 

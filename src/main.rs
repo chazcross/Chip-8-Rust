@@ -1,10 +1,9 @@
-use std::io;
 
 mod cpu;
 mod window;
 mod terminal;
 
-fn main() -> Result<(), io::Error> {
+fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut _cpu = cpu::CPU::new();
     _cpu.read_file();
 
