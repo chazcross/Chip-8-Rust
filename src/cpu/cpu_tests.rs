@@ -472,7 +472,7 @@ fn op_fx29() {
 
     cpu.execute_opcode();
 
-    assert_eq!(cpu.i_register, 0x50 + (9 * 5)); // Font at 0x50 + (char * 5)
+    assert_eq!(cpu.i_register, 9 * 5);
 }
 
 #[test]

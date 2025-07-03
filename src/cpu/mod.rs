@@ -338,7 +338,7 @@ impl CPU {
     fn op_fx29(&mut self, x: u8) {
         let vx = self.registers[x as usize] as u16;
 
-        self.i_register = 0x50 + (vx * 5);
+        self.i_register = vx * 5;
     }
 
     fn op_fx33(&mut self, x: u8) {
