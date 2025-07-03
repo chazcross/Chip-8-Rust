@@ -1,6 +1,6 @@
 extern crate crossterm;
 
-use crossterm::{terminal, event::{self, Event, KeyCode, KeyEvent}};
+use crossterm::{terminal, event::{self, Event, KeyCode, KeyEvent, KeyEventKind}};
 use std::convert::AsRef;
 use std::io::stdout;
 use ratatui::backend::CrosstermBackend;
@@ -17,6 +17,8 @@ pub struct TerminalApp {
     cpu: cpu::CPU,
     items: Vec<disassembler::Dissemble>,
     offset: u16,
+    current_key: Option<u8>,
+    last_key_time: std::time::Instant,
 }
 
 impl TerminalApp {
@@ -25,6 +27,8 @@ impl TerminalApp {
             cpu: cpu,
             items: vec![],
             offset: 0,
+            current_key: None,
+            last_key_time: std::time::Instant::now(),
         };
 
         app.items = app.cpu.disassemble_program();
@@ -40,39 +44,59 @@ impl TerminalApp {
             terminal.hide_cursor().unwrap();
             terminal.clear().unwrap();
 
+            let mut last_render = std::time::Instant::now();
+            let render_interval = std::time::Duration::from_millis(16); // ~60 FPS
+            
             loop {
-                if event::poll(std::time::Duration::from_millis(10))? {
+                if event::poll(std::time::Duration::from_millis(1))? {
                     if let Event::Key(key_event) = event::read()? {
                         if self.process_input_event(key_event) {
                             break;
                         }
                     }
                 }
+                
+                // Check if key has timed out (no repeat event for 100ms means released)
+                if self.current_key.is_some() && self.last_key_time.elapsed() > std::time::Duration::from_millis(100) {
+                    self.current_key = None;
+                }
+                
+                // Always apply the current key state
+                self.cpu.press_key(self.current_key);
 
                 self.cpu.do_cycle();
 
-                terminal
-                    .draw(|mut f| {
-                        let chunks = Layout::default()
-                            .direction(Direction::Horizontal)
-                            .margin(1)
-                            .constraints(
-                                [
-                                    Constraint::Percentage(20),
-                                    Constraint::Percentage(20),
-                                    Constraint::Percentage(80),
-                                ]
-                                .as_ref(),
-                            )
-                            .split(f.area());
+                // Only redraw if enough time has passed
+                if last_render.elapsed() >= render_interval {
+                    terminal
+                        .draw(|mut f| {
+                            let chunks = Layout::default()
+                                .direction(Direction::Horizontal)
+                                .margin(1)
+                                .constraints(
+                                    [
+                                        Constraint::Percentage(20),
+                                        Constraint::Percentage(20),
+                                        Constraint::Percentage(60),
+                                    ]
+                                    .as_ref(),
+                                )
+                                .split(f.area());
 
-                        self.display_disassemble_program(&mut f, chunks[0]);
-                        self.display_executing_instruction(&mut f, chunks[1]);
-                        self.display_grfx(&mut f, chunks[2])
-                    })
-                    .unwrap();
+                            self.display_disassemble_program(&mut f, chunks[0]);
+                            self.display_executing_instruction(&mut f, chunks[1]);
+                            self.display_grfx(&mut f, chunks[2])
+                        })
+                        .unwrap();
+                    last_render = std::time::Instant::now();
+                }
+                
+                // Sleep briefly to prevent excessive CPU usage
+                std::thread::sleep(std::time::Duration::from_micros(500));
             }
         
+        terminal.clear()?;
+        terminal.show_cursor()?;
         terminal::disable_raw_mode()?;
         Ok(())
     }
@@ -253,44 +277,58 @@ impl TerminalApp {
     }
 
     pub fn process_input_event(&mut self, key_event: KeyEvent) -> bool {
-        match key_event.code {
-            KeyCode::Char(c) => match c {
-                    '0' => self.cpu.press_key(Some(0x0)),
-                    '1' => self.cpu.press_key(Some(0x1)),
-                    '2' => self.cpu.press_key(Some(0x2)),
-                    '3' => self.cpu.press_key(Some(0x3)),
-                    '4' => self.cpu.press_key(Some(0x4)),
-                    '5' => self.cpu.press_key(Some(0x5)),
-                    '6' => self.cpu.press_key(Some(0x6)),
-                    '7' => self.cpu.press_key(Some(0x7)),
-                    '8' => self.cpu.press_key(Some(0x8)),
-                    '9' => self.cpu.press_key(Some(0x9)),
-                    'a' => self.cpu.press_key(Some(0xA)),
-                    'b' => self.cpu.press_key(Some(0xB)),
-                    'c' => self.cpu.press_key(Some(0xC)),
-                    'd' => self.cpu.press_key(Some(0xD)),
-                    'e' => self.cpu.press_key(Some(0xE)),
-                    'f' => self.cpu.press_key(Some(0xF)),
-                    'q' => {
-                        println!("The 'q' key is hit and the program is not listening to input anymore.\n\n");
+        match key_event.kind {
+            KeyEventKind::Press | KeyEventKind::Repeat => {
+                match key_event.code {
+                    KeyCode::Char(c) => match c {
+                        '1' => { self.current_key = Some(0x1); self.last_key_time = std::time::Instant::now(); }
+                        '2' => { self.current_key = Some(0x2); self.last_key_time = std::time::Instant::now(); }
+                        '3' => { self.current_key = Some(0x3); self.last_key_time = std::time::Instant::now(); }
+                        '4' => { self.current_key = Some(0xC); self.last_key_time = std::time::Instant::now(); }
+                        'q' => { self.current_key = Some(0x4); self.last_key_time = std::time::Instant::now(); }
+                        'w' => { self.current_key = Some(0x5); self.last_key_time = std::time::Instant::now(); }
+                        'e' => { self.current_key = Some(0x6); self.last_key_time = std::time::Instant::now(); }
+                        'r' => { self.current_key = Some(0xD); self.last_key_time = std::time::Instant::now(); }
+                        'a' => { self.current_key = Some(0x7); self.last_key_time = std::time::Instant::now(); }
+                        's' => { self.current_key = Some(0x8); self.last_key_time = std::time::Instant::now(); }
+                        'd' => { self.current_key = Some(0x9); self.last_key_time = std::time::Instant::now(); }
+                        'f' => { self.current_key = Some(0xE); self.last_key_time = std::time::Instant::now(); }
+                        'z' => { self.current_key = Some(0xA); self.last_key_time = std::time::Instant::now(); }
+                        'x' => { self.current_key = Some(0x0); self.last_key_time = std::time::Instant::now(); }
+                        'c' => { self.current_key = Some(0xB); self.last_key_time = std::time::Instant::now(); }
+                        'v' => { self.current_key = Some(0xF); self.last_key_time = std::time::Instant::now(); }
+                        _ => {}
+                    }
+                    KeyCode::PageUp => {
+                        if self.offset != 0 {
+                            self.offset -= 10;
+                        }
+                    }
+                    KeyCode::PageDown => {
+                        if self.offset + 1 < self.cpu.program_size {
+                            self.offset += 10;
+                        }
+                    }
+                    KeyCode::Esc => {
+                        println!("Escape pressed, exiting...\n");
                         return true;
                     }
                     _ => {}
                 }
-            KeyCode::PageUp => {
-                if self.offset != 0 {
-                    self.offset -= 10;
+            }
+            KeyEventKind::Release => {
+                match key_event.code {
+                    KeyCode::Char(c) => match c {
+                        '1' | '2' | '3' | '4' | 'q' | 'w' | 'e' | 'r' |
+                        'a' | 's' | 'd' | 'f' | 'z' | 'x' | 'c' | 'v' => {
+                            self.current_key = None;
+                        }
+                        _ => {}
+                    }
+                    _ => {}
                 }
             }
-            KeyCode::PageDown => {
-                if self.offset + 1 < self.cpu.program_size {
-                    self.offset += 10;
-                }
-            }
-            KeyCode::Down => {
-                //self.cpu.do_cycle();
-            }
-            _ => self.cpu.press_key(None),
+            _ => {}
         }
 
         return false;
