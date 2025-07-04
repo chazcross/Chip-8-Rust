@@ -119,6 +119,7 @@ impl CPU {
             0x0000 => match self.opcode & 0x0FFF {
                 0x00E0 => self.op_00e0(),
                 0x00EE => self.op_00ee(),
+                _ if nnn != 0x00E0 && nnn != 0x00EE => self.op_0nnn(nnn),
                 _ => self.op_ni(),
             },
             0x1000 => self.op_1nnn(nnn),
@@ -167,9 +168,14 @@ impl CPU {
 
     fn op_ni(&mut self) {
         panic!(
-            "{:#x} {:#X} not implemented yet",
+            "{:#x} {:#06X} not implemented yet",
             self.program_counter, self.opcode
         );
+    }
+
+    // 0NNN: No operation (historically called machine language subroutine, but modern implementations treat as no-op)
+    fn op_0nnn(&mut self, _nnn: u16) {
+        // No operation - do nothing
     }
 
     // 00E0: Clear the display

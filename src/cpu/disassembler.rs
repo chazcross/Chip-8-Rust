@@ -46,6 +46,7 @@ pub fn decode(opcode: u16, memory_location: u16) -> Dissemble {
         0x0000 => match opcode & 0x0FFF {
             0x00E0 => diss.assembly = "ERASE".to_string(),
             0x00EE => diss.assembly = "Return".to_string(),
+            _ if nnn != 0x00E0 && nnn != 0x00EE => write!(diss.assembly, "NOP {:#X}", nnn).unwrap(),
             _ => diss.assembly = "Not implemented yet".to_string(),
         },
         0x1000 => write!(diss.assembly, "GOTO {:#X}", nnn).unwrap(),

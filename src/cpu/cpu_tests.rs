@@ -30,6 +30,46 @@ fn op_00ee() {
 }
 
 #[test]
+fn op_0nnn_basic() {
+    let mut cpu = CPU::new();
+    cpu.opcode = 0x0123;
+    cpu.program_counter = 0x202;
+
+    cpu.execute_opcode();
+    assert_eq!(cpu.program_counter, 0x202);
+}
+
+#[test]
+fn op_0nnn_different_address() {
+    let mut cpu = CPU::new();
+    cpu.opcode = 0x0ABC;
+    cpu.program_counter = 0x300;
+
+    cpu.execute_opcode();
+    assert_eq!(cpu.program_counter, 0x300);
+}
+
+#[test]
+fn op_0nnn_zero_address() {
+    let mut cpu = CPU::new();
+    cpu.opcode = 0x0000;
+    cpu.program_counter = 0x400;
+
+    cpu.execute_opcode();
+    assert_eq!(cpu.program_counter, 0x400);
+}
+
+#[test]
+fn op_0nnn_max_address() {
+    let mut cpu = CPU::new();
+    cpu.opcode = 0x0FFF;
+    cpu.program_counter = 0x500;
+
+    cpu.execute_opcode();
+    assert_eq!(cpu.program_counter, 0x500);
+}
+
+#[test]
 fn op_1nnn() {
     let mut cpu = CPU::new();
     cpu.opcode = 0x1123;
