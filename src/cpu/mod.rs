@@ -16,6 +16,7 @@ pub struct CPU {
     pub stack: Vec<u16>,
     pub sp: u8,
     pub key_press: Option<u8>,
+    pub waiting_for_key: Option<u8>,
     pub program_size: u16,
 }
 
@@ -33,6 +34,7 @@ impl CPU {
             stack: vec![],
             sp: 0,
             key_press: None,
+            waiting_for_key: None,
             program_size: 0,
         };
 
@@ -63,6 +65,7 @@ impl CPU {
         self.stack.clear();
         self.sp = 0;
         self.key_press = None;
+        self.waiting_for_key = None;
         self.program_size = 0;
         
         self.load_fonts();
@@ -75,6 +78,15 @@ impl CPU {
 
         if self.delay_timer > 0 {
             self.delay_timer -= 1;
+        }
+
+        if let Some(reg) = self.waiting_for_key {
+            if let Some(key) = self.key_press {
+                self.registers[reg as usize] = key;
+                self.waiting_for_key = None;
+            } else {
+                return;
+            }
         }
 
         self.fetch_opcode(self.program_counter as usize);
@@ -139,6 +151,7 @@ impl CPU {
             },
             0xF000 => match self.opcode & 0xF0FF {
                 0xF007 => self.op_fx07(x),
+                0xF00A => self.op_fx0a(x),
                 0xF018 => self.op_fx18(x),
                 0xF01E => self.op_fx1e(x),
                 0xF015 => self.op_fx15(x),
@@ -356,6 +369,17 @@ impl CPU {
     // FX07: Set VX to the value of the delay timer
     fn op_fx07(&mut self, x: u8) {
         self.registers[x as usize] = self.delay_timer;
+    }
+
+    // FX0A: Wait for a keypress and store the result in register VX
+    fn op_fx0a(&mut self, x: u8) {
+        if let Some(key) = self.key_press {
+            self.registers[x as usize] = key;
+            self.waiting_for_key = None;
+        } else {
+            self.waiting_for_key = Some(x);
+            self.program_counter -= 2;
+        }
     }
 
     // FX18: Set the sound timer to VX

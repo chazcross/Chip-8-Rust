@@ -574,3 +574,68 @@ fn op_dxyn() {
 
     assert_eq!(cpu.gfx[2][12], true)
 }
+
+#[test]
+fn op_fx0a_no_key() {
+    let mut cpu = CPU::new();
+    cpu.opcode = 0xF50A;
+    cpu.program_counter = 0x202;
+    
+    cpu.execute_opcode();
+    
+    assert_eq!(cpu.waiting_for_key, Some(5));
+    assert_eq!(cpu.program_counter, 0x200);
+}
+
+#[test]
+fn op_fx0a_with_key() {
+    let mut cpu = CPU::new();
+    cpu.opcode = 0xF50A;
+    cpu.program_counter = 0x202;
+    cpu.press_key(Some(0x8));
+    
+    cpu.execute_opcode();
+    
+    assert_eq!(cpu.registers[5], 0x8);
+    assert_eq!(cpu.waiting_for_key, None);
+    assert_eq!(cpu.program_counter, 0x202);
+}
+
+#[test]
+fn op_fx0a_cycle_waiting() {
+    let mut cpu = CPU::new();
+    cpu.opcode = 0xF30A;
+    cpu.program_counter = 0x202;
+    
+    cpu.execute_opcode();
+    
+    assert_eq!(cpu.waiting_for_key, Some(3));
+    assert_eq!(cpu.program_counter, 0x200);
+    
+    cpu.do_cycle();
+    
+    assert_eq!(cpu.waiting_for_key, Some(3));
+    assert_eq!(cpu.program_counter, 0x200);
+}
+
+#[test]
+fn op_fx0a_cycle_key_pressed() {
+    let mut cpu = CPU::new();
+    
+    cpu.memory[0x200] = 0xF3;
+    cpu.memory[0x201] = 0x0A;
+    cpu.memory[0x202] = 0x00;
+    cpu.memory[0x203] = 0xE0;
+    
+    cpu.do_cycle();
+    
+    assert_eq!(cpu.waiting_for_key, Some(3));
+    assert_eq!(cpu.program_counter, 0x200);
+    
+    cpu.press_key(Some(0xF));
+    cpu.do_cycle();
+    
+    assert_eq!(cpu.registers[3], 0xF);
+    assert_eq!(cpu.waiting_for_key, None);
+    assert_eq!(cpu.program_counter, 0x202);
+}

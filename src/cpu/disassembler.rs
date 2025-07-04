@@ -78,6 +78,7 @@ pub fn decode(opcode: u16, memory_location: u16) -> Dissemble {
         },
         0xf000 => match opcode & 0xF0FF {
             0xF007 => write!(diss.assembly, "V{}=TIME", x).unwrap(),
+            0xF00A => write!(diss.assembly, "V{}=KEY", x).unwrap(),
             0xF015 => write!(diss.assembly, "TIME=V{}", x).unwrap(),
             0xF018 => write!(diss.assembly, "TONE=V{}", x).unwrap(),
             0xF01E => write!(diss.assembly, "I=I+V{}", x).unwrap(),
