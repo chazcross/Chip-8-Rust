@@ -51,6 +51,23 @@ impl CPU {
         self.program_counter = 0x200;
     }
 
+    pub fn reset(&mut self) {
+        self.opcode = 0;
+        self.memory = [0; 4096];
+        self.registers = [0; 16];
+        self.i_register = 0;
+        self.program_counter = 0x200;
+        self.gfx = [[false; 32]; 64];
+        self.delay_timer = 0;
+        self.sound_timer = 0;
+        self.stack.clear();
+        self.sp = 0;
+        self.key_press = None;
+        self.program_size = 0;
+        
+        self.load_fonts();
+    }
+
     pub fn do_cycle(&mut self) {
         if self.sound_timer > 0 {
             self.sound_timer -= 1;

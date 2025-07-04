@@ -334,7 +334,7 @@ impl TerminalApp {
         }
 
         let paragraph_widget = Paragraph::new(Text::from(text))
-            .block(block.clone().title("UI"));
+            .block(block.clone().title("UI - Press M to return to ROM selection"));
         
         f.render_widget(paragraph_widget, chunk);
     }
@@ -419,6 +419,11 @@ impl TerminalApp {
                                 'x' => { self.current_key = Some(0x0); self.last_key_time = std::time::Instant::now(); }
                                 'c' => { self.current_key = Some(0xB); self.last_key_time = std::time::Instant::now(); }
                                 'v' => { self.current_key = Some(0xF); self.last_key_time = std::time::Instant::now(); }
+                                'm' | 'M' => {
+                                    self.cpu.reset();
+                                    self.items.clear();
+                                    self.app_state = AppState::RomSelection;
+                                }
                                 _ => {}
                             }
                             KeyCode::PageUp => {
