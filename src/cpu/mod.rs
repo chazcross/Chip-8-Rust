@@ -1,6 +1,4 @@
 use rand;
-use std::fs::File;
-use std::io::Read;
 
 #[cfg(test)]
 mod cpu_tests;
@@ -43,15 +41,13 @@ impl CPU {
         return cpu;
     }
 
-    pub fn read_file(&mut self) {
-        let file = File::open("roms/PONG.c8").unwrap();
-
-        for byte in file.bytes() {
-            self.memory[self.program_counter as usize] = byte.unwrap();
-            self.program_counter += 1;
+    pub fn load_program(&mut self, bytes: &[u8]) {
+        let mut addr = 0x200;
+        for byte in bytes {
+            self.memory[addr] = *byte;
+            addr += 1;
         }
-
-        self.program_size = self.program_counter;
+        self.program_size = addr as u16;
         self.program_counter = 0x200;
     }
 
