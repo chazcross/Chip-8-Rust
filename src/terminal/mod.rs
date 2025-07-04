@@ -170,7 +170,7 @@ impl TerminalApp {
         let items: Vec<ListItem> = self.items.iter().skip(self.offset as usize).map(|item| {
             ListItem::new(Line::from(vec![ratatui::text::Span::styled(
                 format!(
-                    "{:#x} {:#x} {}",
+                    "{:#x} {:#06X} {}",
                     item.memory_location, item.opcode, item.assembly
                 ),
                 style,
