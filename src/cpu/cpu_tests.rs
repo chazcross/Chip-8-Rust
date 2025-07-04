@@ -490,6 +490,38 @@ fn op_fx33() {
 }
 
 #[test]
+fn op_fx55() {
+    let mut cpu = CPU::new();
+    cpu.opcode = 0xF955;
+    cpu.i_register = 0x260;
+
+    cpu.registers[0] = 1;
+    cpu.registers[1] = 2;
+    cpu.registers[2] = 3;
+    cpu.registers[3] = 4;
+    cpu.registers[4] = 5;
+    cpu.registers[5] = 6;
+    cpu.registers[6] = 7;
+    cpu.registers[7] = 8;
+    cpu.registers[8] = 9;
+    cpu.registers[9] = 10;
+
+    cpu.execute_opcode();
+
+    assert_eq!(cpu.memory[0x260], 1);
+    assert_eq!(cpu.memory[0x261], 2);
+    assert_eq!(cpu.memory[0x262], 3);
+    assert_eq!(cpu.memory[0x263], 4);
+    assert_eq!(cpu.memory[0x264], 5);
+    assert_eq!(cpu.memory[0x265], 6);
+    assert_eq!(cpu.memory[0x266], 7);
+    assert_eq!(cpu.memory[0x267], 8);
+    assert_eq!(cpu.memory[0x268], 9);
+    assert_eq!(cpu.memory[0x269], 10);
+    assert_eq!(cpu.i_register, 0x260); // I should be unchanged
+}
+
+#[test]
 fn op_fx65() {
     let mut cpu = CPU::new();
     cpu.opcode = 0xF965;

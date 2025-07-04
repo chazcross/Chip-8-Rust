@@ -78,6 +78,7 @@ pub fn decode(opcode: u16, memory_location: u16) -> Dissemble {
             0xF01E => write!(diss.assembly, "I=I+V{}", x).unwrap(),
             0xF029 => write!(diss.assembly, "I=DSP,V{}", x).unwrap(),
             0xF033 => write!(diss.assembly, "MI=DEQ,V{}", x).unwrap(),
+            0xF055 => write!(diss.assembly, "MI=V0:V{}", x).unwrap(),
             0xF065 => write!(diss.assembly, "V0:V{}=MI", x).unwrap(),
             _ => diss.assembly = "Not implemted yet".to_string(),
         },

@@ -131,6 +131,7 @@ impl CPU {
                 0xF015 => self.op_fx15(x),
                 0xF029 => self.op_fx29(x),
                 0xF033 => self.op_fx33(x),
+                0xF055 => self.op_fx55(x),
                 0xF065 => self.op_fx65(x),
                 _ => self.op_ni(),
             },
@@ -379,6 +380,16 @@ impl CPU {
         self.memory[self.i_register as usize] = hundreds;
         self.memory[self.i_register as usize + 1] = tens;
         self.memory[self.i_register as usize + 2] = ones;
+    }
+
+    // FX55: Store V0 to VX (including VX) in memory starting at address I
+    fn op_fx55(&mut self, x: u8) {
+        let dl = x + 1;
+
+        for i in 0..dl as u16 {
+            let reg_val = self.registers[i as usize];
+            self.memory[(self.i_register + i) as usize] = reg_val;
+        }
     }
 
     // FX65: Fill V0 to VX (including VX) with values from memory starting at address I
