@@ -25,14 +25,14 @@ fn read_rom_file(filename: &str) -> Result<Vec<u8>, std::io::Error> {
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let args = Args::parse();
     
-    let mut _cpu = cpu::CPU::new();
-    let rom_bytes = read_rom_file("roms/PONG.c8")?;
-    _cpu.load_program(&rom_bytes);
-
     if args.terminal {
+        let _cpu = cpu::CPU::new();
         let mut term = terminal::TerminalApp::new(_cpu);
         term.run()?;
     } else {
+        let mut _cpu = cpu::CPU::new();
+        let rom_bytes = read_rom_file("roms/PONG.c8")?;
+        _cpu.load_program(&rom_bytes);
         let mut gui = window::WindowApp::new(_cpu);
         gui.run();
     }
