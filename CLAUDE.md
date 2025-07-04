@@ -17,11 +17,11 @@ The emulator includes a built-in disassembler and CPU state visualization for de
 # Build the project
 cargo build
 
-# Run in window mode (default)
+# Run in terminal mode (default)
 cargo run
 
-# Run in terminal mode
-cargo run -- --terminal
+# Run in window mode
+cargo run -- --window
 
 # Show help
 cargo run -- --help
@@ -62,11 +62,11 @@ cargo run --release
 - Program counter starts at 0x200 (standard CHIP-8 convention)
 
 **Display Modes**:
-- **Window App** (`src/window/mod.rs`): Uses minifb for 64x32 pixel display with 16x scaling
-- **Terminal App** (`src/terminal/mod.rs`): Uses ratatui for terminal-based display with three panels:
+- **Terminal App** (`src/terminal/mod.rs`): Default mode. Uses ratatui for terminal-based display with three panels:
   - Disassembly view with scrolling
   - CPU state (registers, timers, current instruction)
   - Graphics display using Unicode block characters
+- **Window App** (`src/window/mod.rs`): Uses minifb for 64x32 pixel display with 16x scaling
 
 **Disassembler** (`src/cpu/disassembler.rs`):
 - Converts opcodes to human-readable assembly
