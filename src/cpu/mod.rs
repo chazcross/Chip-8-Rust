@@ -105,7 +105,7 @@ impl CPU {
 
         match nibble {
             0x0000 => match self.opcode & 0x0FFF {
-                0x0E0 => self.op_00e0(),
+                0x00E0 => self.op_00e0(),
                 0x00EE => self.op_00ee(),
                 _ => self.op_ni(),
             },

@@ -44,7 +44,7 @@ pub fn decode(opcode: u16, memory_location: u16) -> Dissemble {
 
     match nibble {
         0x0000 => match opcode & 0x0FFF {
-            0x0E0 => diss.assembly = "ERASE".to_string(),
+            0x00E0 => diss.assembly = "ERASE".to_string(),
             0x00EE => diss.assembly = "Return".to_string(),
             _ => diss.assembly = "Not implemented yet".to_string(),
         },
