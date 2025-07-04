@@ -461,6 +461,30 @@ fn op_exa1_not_pressed() {
 }
 
 #[test]
+fn op_ex9e_pressed() {
+    let mut cpu = CPU::new();
+    cpu.opcode = 0xE19E;
+    cpu.registers[0x1] = 1;
+    cpu.press_key(Some(1));
+
+    cpu.execute_opcode();
+
+    assert_eq!(cpu.program_counter, 0x200 + 2);
+}
+
+#[test]
+fn op_ex9e_not_pressed() {
+    let mut cpu = CPU::new();
+    cpu.opcode = 0xE19E;
+    cpu.registers[0x1] = 1;
+    cpu.press_key(Some(2));
+
+    cpu.execute_opcode();
+
+    assert_eq!(cpu.program_counter, 0x200);
+}
+
+#[test]
 fn op_fx07() {
     let mut cpu = CPU::new();
     cpu.opcode = 0xFA07;

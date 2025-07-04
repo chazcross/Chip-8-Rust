@@ -147,6 +147,7 @@ impl CPU {
             0xC000 => self.op_cxnn(x, nn),
             0xD000 => self.op_dxyn(x as usize, y as usize, n as usize),
             0xE000 => match self.opcode & 0xF0FF {
+                0xE09E => self.op_ex9e(x),
                 0xE0A1 => self.op_exa1(x),
                 _ => self.op_ni(),
             },
@@ -361,6 +362,14 @@ impl CPU {
                 self.registers[0xF] |= (pixel & self.gfx[x_pos][y_pos]) as u8;
                 self.gfx[x_pos][y_pos] ^= pixel;
             }
+        }
+    }
+
+    // EX9E: Skip next instruction if key stored in VX is pressed
+    fn op_ex9e(&mut self, x: u8) {
+        let vx = self.registers[x as usize];
+        if self.is_key_press(vx) {
+            self.program_counter += 2;
         }
     }
 
