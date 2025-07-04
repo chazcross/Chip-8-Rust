@@ -36,17 +36,17 @@ pub fn decode(opcode: u16, memory_location: u16) -> Dissemble {
 
     let nibble = opcode & 0xF000;
 
-    let x = (opcode & 0x0f00) >> 8 as u8;
-    let y = (opcode & 0x00F0) >> 4 as u8;
-    let nn = (opcode & 0x00ff) as u8;
-    let nnn = opcode & 0x0fff;
-    let n = (opcode & 0x000F) as u8;
+    let x: u8 = ((opcode & 0x0F00) >> 8) as u8;
+    let y: u8 = ((opcode & 0x00F0) >> 4) as u8;
+    let nn: u8 = (opcode & 0x00FF) as u8;
+    let nnn: u16 = opcode & 0x0FFF;
+    let n: u8 = (opcode & 0x000F) as u8;
 
     match nibble {
         0x0000 => match opcode & 0x0FFF {
             0x0E0 => diss.assembly = "ERASE".to_string(),
             0x00EE => diss.assembly = "Return".to_string(),
-            _ => diss.assembly = "Not implemted yet".to_string(),
+            _ => diss.assembly = "Not implemented yet".to_string(),
         },
         0x1000 => write!(diss.assembly, "GOTO {:#X}", nnn).unwrap(),
         0x2000 => write!(diss.assembly, "DO {:#X}", nnn).unwrap(),
@@ -74,7 +74,7 @@ pub fn decode(opcode: u16, memory_location: u16) -> Dissemble {
         0xD000 => write!(diss.assembly, "SHOW {}@V{},V{}", n, x, y).unwrap(),
         0xe000 => match opcode & 0xF0FF {
             0xE0A1 => write!(diss.assembly, "SKF V{}≠KEY", x).unwrap(),
-            _ => diss.assembly = "Not implemted yet".to_string(),
+            _ => diss.assembly = "Not implemented yet".to_string(),
         },
         0xf000 => match opcode & 0xF0FF {
             0xF007 => write!(diss.assembly, "V{}=TIME", x).unwrap(),
@@ -85,9 +85,9 @@ pub fn decode(opcode: u16, memory_location: u16) -> Dissemble {
             0xF033 => write!(diss.assembly, "MI=DEQ,V{}", x).unwrap(),
             0xF055 => write!(diss.assembly, "MI=V0:V{}", x).unwrap(),
             0xF065 => write!(diss.assembly, "V0:V{}=MI", x).unwrap(),
-            _ => diss.assembly = "Not implemted yet".to_string(),
+            _ => diss.assembly = "Not implemented yet".to_string(),
         },
-        _ => diss.assembly = "Not implemted yet".to_string(),
+        _ => diss.assembly = "Not implemented yet".to_string(),
     }
 
     return diss;
