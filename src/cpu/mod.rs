@@ -143,7 +143,7 @@ impl CPU {
             },
             0x9000 => self.op_9xy0(x, y),
             0xA000 => self.op_annn(nnn),
-            0xB000 => self.op_ni(),
+            0xB000 => self.op_bnnn(nnn),
             0xC000 => self.op_cxnn(x, nn),
             0xD000 => self.op_dxyn(x as usize, y as usize, n as usize),
             0xE000 => match self.opcode & 0xF0FF {
@@ -337,6 +337,11 @@ impl CPU {
     // ANNN: Set I to the address NNN
     fn op_annn(&mut self, nnn: u16) {
         self.i_register = nnn;
+    }
+
+    // BNNN: Jump to address NNN plus V0
+    fn op_bnnn(&mut self, nnn: u16) {
+        self.program_counter = self.registers[0] as u16 + nnn;
     }
 
     // CXNN: Set VX to the result of a bitwise AND operation on a random number and NN

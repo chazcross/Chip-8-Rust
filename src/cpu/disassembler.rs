@@ -70,7 +70,7 @@ pub fn decode(opcode: u16, memory_location: u16) -> Dissemble {
         },
         0x9000 => write!(diss.assembly, "SKF V{}≠V{}", x, y).unwrap(),
         0xA000 => write!(diss.assembly, "I={:#X}", nnn).unwrap(),
-        0xB000 => write!(diss.assembly, "{:#X} not handled yet", opcode).unwrap(),
+        0xB000 => write!(diss.assembly, "GOTO V0+{:#X}", nnn).unwrap(),
         0xC000 => write!(diss.assembly, "V{}=RND.{:#X}", x, nn).unwrap(),
         0xD000 => write!(diss.assembly, "SHOW {}@V{},V{}", n, x, y).unwrap(),
         0xe000 => match opcode & 0xF0FF {

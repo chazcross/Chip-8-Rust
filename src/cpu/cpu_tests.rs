@@ -50,6 +50,50 @@ fn op_0nnn_different_address() {
 }
 
 #[test]
+fn op_bnnn_basic() {
+    let mut cpu = CPU::new();
+    cpu.opcode = 0xB123;
+    cpu.registers[0] = 0x50;
+    cpu.program_counter = 0x200;
+
+    cpu.execute_opcode();
+    assert_eq!(cpu.program_counter, 0x50 + 0x123);
+}
+
+#[test]
+fn op_bnnn_with_zero_v0() {
+    let mut cpu = CPU::new();
+    cpu.opcode = 0xB456;
+    cpu.registers[0] = 0x00;
+    cpu.program_counter = 0x200;
+
+    cpu.execute_opcode();
+    assert_eq!(cpu.program_counter, 0x456);
+}
+
+#[test]
+fn op_bnnn_with_max_v0() {
+    let mut cpu = CPU::new();
+    cpu.opcode = 0xB100;
+    cpu.registers[0] = 0xFF;
+    cpu.program_counter = 0x200;
+
+    cpu.execute_opcode();
+    assert_eq!(cpu.program_counter, 0xFF + 0x100);
+}
+
+#[test]
+fn op_bnnn_wraparound() {
+    let mut cpu = CPU::new();
+    cpu.opcode = 0xBFFF;
+    cpu.registers[0] = 0xFF;
+    cpu.program_counter = 0x200;
+
+    cpu.execute_opcode();
+    assert_eq!(cpu.program_counter, 0xFF + 0xFFF);
+}
+
+#[test]
 fn op_0nnn_zero_address() {
     let mut cpu = CPU::new();
     cpu.opcode = 0x0000;
