@@ -78,6 +78,7 @@ impl TerminalApp {
             
             self.cpu.load_program(&bytes);
             self.items = self.cpu.disassemble_program();
+            self.offset = 0;
             self.app_state = AppState::Emulating;
         }
         Ok(())
@@ -434,6 +435,7 @@ impl TerminalApp {
                             KeyCode::Esc => {
                                 self.cpu.reset();
                                 self.items.clear();
+                                self.offset = 0;
                                 self.app_state = AppState::RomSelection;
                             }
                             _ => {}
