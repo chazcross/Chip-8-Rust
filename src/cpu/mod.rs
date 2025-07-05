@@ -25,8 +25,8 @@ impl CPU {
         let mut cpu = CPU {
             opcode: 0,
             memory: [0; 4096],
-            registers: [0; 16],
-            i_register: 0,
+            registers: [0; 16], //Registers V0-VF
+            i_register: 0, 
             program_counter: 0x200,
             gfx: [[false; 32]; 64], // [false; 64 * 32],
             delay_timer: 0,
@@ -364,7 +364,7 @@ impl CPU {
                 //sprites are 8px wide
                 let x_pos = ((vx + column) % 64) as usize;
                 let pixel = (font >> (7 - column)) & 1 != 0;
-                self.registers[0xF] |= (pixel & self.gfx[x_pos][y_pos]) as u8;
+                self.registers[0xF] |= (pixel & self.gfx[x_pos][y_pos]) as u8; //check for collision
                 self.gfx[x_pos][y_pos] ^= pixel;
             }
         }
