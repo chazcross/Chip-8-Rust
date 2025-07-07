@@ -30,6 +30,7 @@ pub struct TerminalApp {
     app_state: AppState,
     rom_files: Vec<String>,
     selected_rom: usize,
+    rom_scroll_offset: usize,
 }
 
 impl TerminalApp {
@@ -43,6 +44,7 @@ impl TerminalApp {
             app_state: AppState::RomSelection,
             rom_files: vec![],
             selected_rom: 0,
+            rom_scroll_offset: 0,
         };
 
         app.scan_rom_directory();
@@ -58,7 +60,10 @@ impl TerminalApp {
                     if path.is_file() {
                         if let Some(file_name) = path.file_name() {
                             if let Some(file_str) = file_name.to_str() {
-                                self.rom_files.push(file_str.to_string());
+                                // Only include .ch8 files
+                                if file_str.ends_with(".ch8") {
+                                    self.rom_files.push(file_str.to_string());
+                                }
                             }
                         }
                     }
@@ -344,10 +349,27 @@ impl TerminalApp {
         let style = Style::default().fg(Color::White);
         let selected_style = Style::default().fg(Color::Black).bg(Color::White);
 
+        // Calculate available height for list items (subtract 2 for borders)
+        let available_height = area.height as usize - 2;
+        
+        // Ensure selected item is visible
+        if self.selected_rom < self.rom_scroll_offset {
+            self.rom_scroll_offset = self.selected_rom;
+        } else if self.selected_rom >= self.rom_scroll_offset + available_height {
+            self.rom_scroll_offset = self.selected_rom - available_height + 1;
+        }
+
         let mut list_items: Vec<ListItem> = Vec::new();
         
-        for (i, rom_file) in self.rom_files.iter().enumerate() {
-            let item_style = if i == self.selected_rom {
+        // Only show items that fit on screen starting from scroll offset
+        let visible_files = self.rom_files.iter()
+            .skip(self.rom_scroll_offset)
+            .take(available_height)
+            .enumerate();
+        
+        for (display_index, rom_file) in visible_files {
+            let actual_index = self.rom_scroll_offset + display_index;
+            let item_style = if actual_index == self.selected_rom {
                 selected_style
             } else {
                 style
