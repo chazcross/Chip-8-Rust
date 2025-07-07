@@ -358,11 +358,11 @@ impl CPU {
 
         for row in 0..rows {
             let font = self.memory[self.i_register as usize + row];
-            let y_pos = ((vy + row as u8) % 32) as usize;
+            let y_pos = ((vy as u16 + row as u16) % 32) as usize;
 
             for column in 0..8 {
                 //sprites are 8px wide
-                let x_pos = ((vx + column) % 64) as usize;
+                let x_pos = ((vx as u16 + column as u16) % 64) as usize;
                 let pixel = (font >> (7 - column)) & 1 != 0;
                 self.registers[0xF] |= (pixel & self.gfx[x_pos][y_pos]) as u8; //check for collision
                 self.gfx[x_pos][y_pos] ^= pixel;
