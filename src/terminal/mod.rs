@@ -78,7 +78,7 @@ impl TerminalApp {
         self.rom_files.sort();
     }
 
-    fn load_selected_rom(&mut self) -> Result<(), Box<dyn std::error::Error>> {
+    fn load_rom_with_mode(&mut self, debug_mode: bool) -> Result<(), Box<dyn std::error::Error>> {
         if self.selected_rom < self.rom_files.len() {
             let rom_path = format!("roms/{}", self.rom_files[self.selected_rom]);
             
@@ -89,27 +89,26 @@ impl TerminalApp {
             self.cpu.load_program(&bytes);
             self.items = self.cpu.disassemble_program();
             self.offset = 0;
-            self.app_state = AppState::Emulating;
+            
+            if debug_mode {
+                self.debug_mode = true;
+                self.step_requested = false;
+                self.app_state = AppState::Debugging;
+            } else {
+                self.debug_mode = false;
+                self.step_requested = false;
+                self.app_state = AppState::Emulating;
+            }
         }
         Ok(())
     }
 
+    fn load_selected_rom(&mut self) -> Result<(), Box<dyn std::error::Error>> {
+        self.load_rom_with_mode(false)
+    }
+
     fn load_selected_rom_debug(&mut self) -> Result<(), Box<dyn std::error::Error>> {
-        if self.selected_rom < self.rom_files.len() {
-            let rom_path = format!("roms/{}", self.rom_files[self.selected_rom]);
-            
-            let mut file = fs::File::open(&rom_path)?;
-            let mut bytes = Vec::new();
-            file.read_to_end(&mut bytes)?;
-            
-            self.cpu.load_program(&bytes);
-            self.items = self.cpu.disassemble_program();
-            self.offset = 0;
-            self.debug_mode = true;
-            self.step_requested = false;
-            self.app_state = AppState::Debugging;
-        }
-        Ok(())
+        self.load_rom_with_mode(true)
     }
 
     pub fn run(&mut self) -> Result<(), Box<dyn std::error::Error>> {
