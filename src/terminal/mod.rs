@@ -19,6 +19,7 @@ use std::io::Read;
 enum AppState {
     RomSelection,
     Emulating,
+    Debugging,
 }
 
 pub struct TerminalApp {
@@ -31,6 +32,8 @@ pub struct TerminalApp {
     rom_files: Vec<String>,
     selected_rom: usize,
     rom_scroll_offset: usize,
+    debug_mode: bool,
+    step_requested: bool,
 }
 
 impl TerminalApp {
@@ -45,6 +48,8 @@ impl TerminalApp {
             rom_files: vec![],
             selected_rom: 0,
             rom_scroll_offset: 0,
+            debug_mode: false,
+            step_requested: false,
         };
 
         app.scan_rom_directory();
@@ -85,6 +90,24 @@ impl TerminalApp {
             self.items = self.cpu.disassemble_program();
             self.offset = 0;
             self.app_state = AppState::Emulating;
+        }
+        Ok(())
+    }
+
+    fn load_selected_rom_debug(&mut self) -> Result<(), Box<dyn std::error::Error>> {
+        if self.selected_rom < self.rom_files.len() {
+            let rom_path = format!("roms/{}", self.rom_files[self.selected_rom]);
+            
+            let mut file = fs::File::open(&rom_path)?;
+            let mut bytes = Vec::new();
+            file.read_to_end(&mut bytes)?;
+            
+            self.cpu.load_program(&bytes);
+            self.items = self.cpu.disassemble_program();
+            self.offset = 0;
+            self.debug_mode = true;
+            self.step_requested = false;
+            self.app_state = AppState::Debugging;
         }
         Ok(())
     }
@@ -158,6 +181,46 @@ impl TerminalApp {
                             last_render = std::time::Instant::now();
                         }
                     }
+                    AppState::Debugging => {
+                        // Check if key has timed out (no repeat event for 100ms means released)
+                        if self.current_key.is_some() && self.last_key_time.elapsed() > std::time::Duration::from_millis(100) {
+                            self.current_key = None;
+                        }
+                        
+                        // Always apply the current key state
+                        self.cpu.press_key(self.current_key);
+
+                        // Only execute next instruction if step was requested
+                        if self.step_requested {
+                            self.cpu.do_cycle();
+                            self.step_requested = false;
+                        }
+
+                        // Only redraw if enough time has passed
+                        if last_render.elapsed() >= render_interval {
+                            terminal
+                                .draw(|mut f| {
+                                    let chunks = Layout::default()
+                                        .direction(Direction::Horizontal)
+                                        .margin(1)
+                                        .constraints(
+                                            [
+                                                Constraint::Percentage(20),
+                                                Constraint::Percentage(20),
+                                                Constraint::Percentage(60),
+                                            ]
+                                            .as_ref(),
+                                        )
+                                        .split(f.area());
+
+                                    self.display_disassemble_program(&mut f, chunks[0]);
+                                    self.display_executing_instruction(&mut f, chunks[1]);
+                                    self.display_grfx(&mut f, chunks[2])
+                                })
+                                .unwrap();
+                            last_render = std::time::Instant::now();
+                        }
+                    }
                 }
                 
                 // Sleep briefly to prevent excessive CPU usage
@@ -172,25 +235,61 @@ impl TerminalApp {
 
     pub fn display_disassemble_program(&mut self, f: &mut Frame, chunk: Rect) {
         let style = Style::default().fg(Color::White);
+        let current_style = Style::default().fg(Color::Black).bg(Color::Yellow);
+
+        // Auto-scroll to follow program counter in debug mode
+        if self.app_state == AppState::Debugging {
+            self.auto_scroll_to_current_instruction(chunk.height as usize);
+        }
 
         let items: Vec<ListItem> = self.items.iter().skip(self.offset as usize).map(|item| {
+            let is_current = item.memory_location == self.cpu.program_counter - 2;
+            let item_style = if is_current && self.app_state == AppState::Debugging {
+                current_style
+            } else {
+                style
+            };
+            
             ListItem::new(Line::from(vec![ratatui::text::Span::styled(
                 format!(
                     "{:#x} {:#06X} {}",
                     item.memory_location, item.opcode, item.assembly
                 ),
-                style,
+                item_style,
             )]))
         }).collect();
+
+        let title = match self.app_state {
+            AppState::Debugging => "Assembly - Current instruction highlighted",
+            _ => "Assembly - pgup/pgdown to scroll",
+        };
 
         let list_widget = List::new(items)
             .block(
                 Block::default()
                     .borders(Borders::ALL)
-                    .title("pgup/pgdown to scroll"),
+                    .title(title),
             );
         
         f.render_widget(list_widget, chunk);
+    }
+
+    fn auto_scroll_to_current_instruction(&mut self, visible_height: usize) {
+        // Find the index of the current instruction
+        let current_pc = self.cpu.program_counter - 2;
+        if let Some(current_index) = self.items.iter().position(|item| item.memory_location == current_pc) {
+            let available_height = if visible_height > 2 { visible_height - 2 } else { 1 }; // Account for borders
+            
+            // Check if current instruction is visible
+            let current_offset = self.offset as usize;
+            if current_index < current_offset {
+                // Current instruction is above visible area - scroll up
+                self.offset = current_index as u16;
+            } else if current_index >= current_offset + available_height {
+                // Current instruction is below visible area - scroll down
+                self.offset = (current_index - available_height + 1) as u16;
+            }
+        }
     }
 
     pub fn display_executing_instruction(&mut self, f: &mut Frame, chunk: Rect) {
@@ -339,8 +438,13 @@ impl TerminalApp {
             text.push(Line::from(line_spans));
         }
 
+        let title = match self.app_state {
+            AppState::Debugging => "UI - Debug Mode: → to step, Enter to run, Space to toggle, ESC to exit",
+            _ => "UI - Press Space for debug mode, ESC to return to ROM selection",
+        };
+        
         let paragraph_widget = Paragraph::new(Text::from(text))
-            .block(block.clone().title("UI - Press ESC to return to ROM selection"));
+            .block(block.clone().title(title));
         
         f.render_widget(paragraph_widget, chunk);
     }
@@ -384,7 +488,7 @@ impl TerminalApp {
             .block(
                 Block::default()
                     .borders(Borders::ALL)
-                    .title("Select ROM - Use ↑/↓ to navigate, Enter to load, Esc to quit"),
+                    .title("Select ROM - Use ↑/↓ to navigate, Enter to run, Space for debug mode, Esc to quit"),
             );
         
         f.render_widget(list_widget, area);
@@ -409,6 +513,11 @@ impl TerminalApp {
                             KeyCode::Enter => {
                                 if let Err(e) = self.load_selected_rom() {
                                     println!("Error loading ROM: {}", e);
+                                }
+                            }
+                            KeyCode::Char(' ') => {
+                                if let Err(e) = self.load_selected_rom_debug() {
+                                    println!("Error loading ROM in debug mode: {}", e);
                                 }
                             }
                             KeyCode::Esc => {
@@ -442,6 +551,12 @@ impl TerminalApp {
                                 'x' => { self.current_key = Some(0x0); self.last_key_time = std::time::Instant::now(); }
                                 'c' => { self.current_key = Some(0xB); self.last_key_time = std::time::Instant::now(); }
                                 'v' => { self.current_key = Some(0xF); self.last_key_time = std::time::Instant::now(); }
+                                ' ' => {
+                                    // Toggle to debug mode
+                                    self.debug_mode = true;
+                                    self.step_requested = false;
+                                    self.app_state = AppState::Debugging;
+                                }
                                 _ => {}
                             }
                             KeyCode::PageUp => {
@@ -458,6 +573,80 @@ impl TerminalApp {
                                 self.cpu.reset();
                                 self.items.clear();
                                 self.offset = 0;
+                                self.app_state = AppState::RomSelection;
+                            }
+                            _ => {}
+                        }
+                    }
+                    KeyEventKind::Release => {
+                        match key_event.code {
+                            KeyCode::Char(c) => match c {
+                                '1' | '2' | '3' | '4' | 'q' | 'w' | 'e' | 'r' |
+                                'a' | 's' | 'd' | 'f' | 'z' | 'x' | 'c' | 'v' => {
+                                    self.current_key = None;
+                                }
+                                _ => {}
+                            }
+                            _ => {}
+                        }
+                    }
+                }
+            }
+            AppState::Debugging => {
+                match key_event.kind {
+                    KeyEventKind::Press | KeyEventKind::Repeat => {
+                        match key_event.code {
+                            KeyCode::Char(c) => match c {
+                                '1' => { self.current_key = Some(0x1); self.last_key_time = std::time::Instant::now(); }
+                                '2' => { self.current_key = Some(0x2); self.last_key_time = std::time::Instant::now(); }
+                                '3' => { self.current_key = Some(0x3); self.last_key_time = std::time::Instant::now(); }
+                                '4' => { self.current_key = Some(0xC); self.last_key_time = std::time::Instant::now(); }
+                                'q' => { self.current_key = Some(0x4); self.last_key_time = std::time::Instant::now(); }
+                                'w' => { self.current_key = Some(0x5); self.last_key_time = std::time::Instant::now(); }
+                                'e' => { self.current_key = Some(0x6); self.last_key_time = std::time::Instant::now(); }
+                                'r' => { self.current_key = Some(0xD); self.last_key_time = std::time::Instant::now(); }
+                                'a' => { self.current_key = Some(0x7); self.last_key_time = std::time::Instant::now(); }
+                                's' => { self.current_key = Some(0x8); self.last_key_time = std::time::Instant::now(); }
+                                'd' => { self.current_key = Some(0x9); self.last_key_time = std::time::Instant::now(); }
+                                'f' => { self.current_key = Some(0xE); self.last_key_time = std::time::Instant::now(); }
+                                'z' => { self.current_key = Some(0xA); self.last_key_time = std::time::Instant::now(); }
+                                'x' => { self.current_key = Some(0x0); self.last_key_time = std::time::Instant::now(); }
+                                'c' => { self.current_key = Some(0xB); self.last_key_time = std::time::Instant::now(); }
+                                'v' => { self.current_key = Some(0xF); self.last_key_time = std::time::Instant::now(); }
+                                ' ' => {
+                                    // Toggle back to normal emulation mode
+                                    self.debug_mode = false;
+                                    self.step_requested = false;
+                                    self.app_state = AppState::Emulating;
+                                }
+                                _ => {}
+                            }
+                            KeyCode::Right => {
+                                // Step to next instruction
+                                self.step_requested = true;
+                            }
+                            KeyCode::Enter => {
+                                // Exit debug mode and run normally
+                                self.debug_mode = false;
+                                self.step_requested = false;
+                                self.app_state = AppState::Emulating;
+                            }
+                            KeyCode::PageUp => {
+                                if self.offset != 0 {
+                                    self.offset -= 10;
+                                }
+                            }
+                            KeyCode::PageDown => {
+                                if self.offset + 1 < self.cpu.program_size {
+                                    self.offset += 10;
+                                }
+                            }
+                            KeyCode::Esc => {
+                                self.cpu.reset();
+                                self.items.clear();
+                                self.offset = 0;
+                                self.debug_mode = false;
+                                self.step_requested = false;
                                 self.app_state = AppState::RomSelection;
                             }
                             _ => {}
