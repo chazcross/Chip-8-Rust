@@ -58,6 +58,7 @@ impl TerminalApp {
     }
 
     fn scan_rom_directory(&mut self) {
+        self.rom_files.clear();
         if let Ok(entries) = fs::read_dir("roms") {
             for entry in entries {
                 if let Ok(entry) = entry {
@@ -76,6 +77,12 @@ impl TerminalApp {
             }
         }
         self.rom_files.sort();
+    }
+
+    fn validate_selected_rom_index(&mut self) {
+        if self.rom_files.is_empty() || self.selected_rom >= self.rom_files.len() {
+            self.selected_rom = 0;
+        }
     }
 
     fn load_rom_with_mode(&mut self, debug_mode: bool) -> Result<(), Box<dyn std::error::Error>> {
@@ -572,6 +579,8 @@ impl TerminalApp {
                                 self.cpu.reset();
                                 self.items.clear();
                                 self.offset = 0;
+                                self.scan_rom_directory();
+                                self.validate_selected_rom_index();
                                 self.app_state = AppState::RomSelection;
                             }
                             _ => {}
@@ -646,6 +655,8 @@ impl TerminalApp {
                                 self.offset = 0;
                                 self.debug_mode = false;
                                 self.step_requested = false;
+                                self.scan_rom_directory();
+                                self.validate_selected_rom_index();
                                 self.app_state = AppState::RomSelection;
                             }
                             _ => {}
